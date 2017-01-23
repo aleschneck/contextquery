@@ -1,0 +1,281 @@
+<script>
+    class contextStyles extends HTMLElement {
+        constructor() {
+            super(); 
+        }
+
+        connectedCallback() {
+            this.href();         
+            //this.content();        
+        }
+
+        content() {
+            if(this.hasAttribute('content') && this.getAttribute('content') != "") {
+                generateClasses( this.getAttribute('content'));
+            } else {
+                console.log('content empty or non existent');
+            }      
+        }
+
+        href() {
+            if(this.hasAttribute('href') && this.getAttribute('href') != "") {
+                get(this.getAttribute('href')).then(function(response) {
+                    generateClasses(response);
+                }, function(error) {
+                    console.error("Failed!", error);
+                })
+            } else {
+                console.log('href empty or non existent');
+            }   
+        }
+     
+    }
+
+    window.customElements.define('context-styles', contextStyles);
+    
+
+    let root = document.querySelector("html");
+
+    let contextRules = [];
+
+    function generateClasses(str) {
+        
+        let contexts = str.split('@context');
+        contexts.splice(0,1);
+
+        for (let i of contexts) {
+            let arr = [],  arrOfObj = [], arrOfClasses = [], rules, ruleArr, styles, singleStyles;
+            rules = i.substring(i.indexOf("("),i.indexOf("{"));
+            ruleArr = rules.split(' and ');
+            styles = i.substring(i.indexOf("{") + 1,i.lastIndexOf("}"));
+            singleStyles = styles.split('}');
+            singleStyles.pop();
+            for (let j of ruleArr) {
+                let obj = {}, inner, a;
+                inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));
+                a = inner.split(':');                   
+                obj[a[0]] = parseFloat(a[1]);
+                arrOfObj.push(obj);
+            }
+
+            for (let z of singleStyles){
+                let obj = {}, className, attrs; //attrsList, attrsObjArr = [];
+                className = z.substring(0,z.indexOf("{"));
+                attrs =  z.substring(z.indexOf("{") + 1);
+                /*
+                attrsList = attrs.split(';');
+                console.log(attrs);         
+                for(let o of attrsList) {
+                    let v, sv, j = {};
+                    v = o.trim();            
+                    if(v != "") {  
+                        sv = v.split(':');
+                        j[sv[0].trim()] = sv[1].trim()
+                        attrsObjArr.push(j);
+                    }           
+                }
+                */
+                //console.log(attrsObjList);
+                obj[className.trim()] =  attrs.trim(); //attrsObjArr; 
+                arrOfClasses.push(obj);
+            }  
+
+            arr.push(arrOfObj);
+            arr.push(arrOfClasses);   
+            contextRules.push(arr);          
+            
+        }
+        generateStyles(contextRules);
+        performCheck(ambientValue.ambient);
+        console.log(contextRules);  
+    }
+        
+
+
+
+    function findClosingCurly(str){
+        var count = 0;
+        var startIdx = str.indexOf('{');
+        var lastIndex = [];
+        var pair = [];
+        for(var i = startIdx; i < str.length; i++) {
+            if(str[i] === "{") {
+                if(count % 2 == 0){
+                    pair.push(i);
+                }
+                count++;
+            } 
+            if(str[i] === "}"){
+                if(count % 2 != 0){
+                    console.log(count);
+                    pair.push(i);
+                    lastIndex.push(pair);
+                    pair = [];
+                }
+                count++;            
+            }
+        }
+        console.log(lastIndex);
+        return lastIndex;
+    }
+
+    function get(url) {
+
+        return new Promise(function(resolve, reject) {
+            var req = new XMLHttpRequest();
+            req.open('GET', url);
+
+            req.onload = function() {
+                if (req.status == 200) {
+                    resolve(req.response);
+                }
+                else {
+                    reject(Error(req.statusText));
+                }
+            };
+
+            req.onerror = function() {
+                reject(Error("Network Error"));
+            };
+
+            req.send();
+        });
+    }
+
+    const randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
+    function generateStyles() {
+        let head = document.querySelector('head'), style = document.createElement('style'), len = contextRules.length, 
+        suffix = '.css-ctx-queries-',css = "";
+        style.type = 'text/css';
+        style.id = 'cssCtxQueriesStyleTag';
+        for(let i of contextRules) {
+            len--;
+            for(let styl of i[1]) {
+                let key = Object.keys(styl)[0];
+                css +=  suffix + (randomNum + len) + ' ' + key + '{' + Object.values(styl)[0] + '}';
+            }
+        }
+        if(document.getElementById('cssCtxQueriesStyleTag')) {
+            document.getElementById('cssCtxQueriesStyleTag').innerHTML = "";
+            document.getElementById('cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
+        } else {
+            style.appendChild(document.createTextNode(css));
+            head.appendChild(style);
+        }
+    }
+    
+    
+    function performCheck(setValue) {
+        let len = contextRules.length;
+        for (let i of contextRules) {
+            let min, max;
+            len--;
+            for (let j of i[0]) {
+                if(typeof j['min-ambient-light'] != 'undefined') {
+                    min = j['min-ambient-light'];
+                }               
+                if(typeof j['max-ambient-light'] != 'undefined') {
+                    max = j['max-ambient-light'];
+                }                          
+            }
+            for(let k of i[1]){
+                let key = Object.keys(k)[0], clss = 'css-ctx-queries-' + (randomNum+len);//elmList, vals ,s;
+                //elmList = document.querySelectorAll(Object.keys(k));
+                //vals = Object.values(k);
+
+                if( min <= setValue && setValue <= max ) {
+                    if(!root.classList.contains(clss)){
+                        root.classList.add(clss);
+                    }       
+                } else if ( setValue < min || max < setValue) {
+                    if(root.classList.contains(clss)) {
+                        root.classList.remove(clss);
+                    }             
+                }
+                /*
+                s = k[Object.keys(k)];
+                for(let elm of elmList) {
+                    for(let style of s){
+                        if( min <= setValue && setValue <= max ) {
+                            //console.log('add ' + Object.keys(style)[0]);
+                            elm.style[Object.keys(style)[0]] = Object.values(style)[0];
+                        } else if ( setValue < min || max < setValue) {
+                             //console.log('remove ' + Object.keys(style)[0]);
+                            elm.style.removeProperty(Object.keys(style)[0]);
+                        }
+                    }
+                }
+                */
+            }
+             
+        }
+    }
+
+    /*
+    * object.watch polyfill
+    *
+    * 2012-04-03
+    *
+    * By Eli Grey, http://eligrey.com
+    * Public Domain.
+    * NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+    */
+
+    // object.watch
+    if (!Object.prototype.watch) {
+        Object.defineProperty(Object.prototype, "watch", {
+            enumerable: false
+            , configurable: true
+            , writable: false
+            , value: function (prop, handler) {
+                var
+                oldval = this[prop]
+                , newval = oldval
+                , getter = function () {
+                    return newval;
+                }
+                , setter = function (val) {
+                    oldval = newval;
+                    return newval = handler.call(this, prop, oldval, val);
+                }
+                ;
+                
+                if (delete this[prop]) { // can't watch constants
+                    Object.defineProperty(this, prop, {
+                        get: getter
+                        , set: setter
+                        , enumerable: true
+                        , configurable: true
+                    });
+                }
+            }
+        });
+    }
+    // object.unwatch
+    if (!Object.prototype.unwatch) {
+        Object.defineProperty(Object.prototype, "unwatch", {
+            enumerable: false
+            , configurable: true
+            , writable: false
+            , value: function (prop) {
+                var val = this[prop];
+                delete this[prop]; // remove accessors
+                this[prop] = val;
+            }
+        });
+    }
+
+    let ambientValue = {ambient: 0};
+    ambientValue.watch('ambient',function(id, oldval, newval){
+        performCheck(newval);
+    });
+    
+    document.addEventListener('DOMContentLoaded',function(){
+        let inputElm = document.querySelector("#in");
+        inputElm.addEventListener('change',function(){
+            ambientValue.ambient = this.value;
+        });
+    });
+    
+
+</script>

@@ -1,0 +1,9 @@
+@context (min-ambient-light: 10%) and (max-ambient-light: 40%) { 
+    .adapt { background-color: #000; color: #fff; font-size: 24px }
+    .test { color: #fff }
+}
+
+@context (min-ambient-light: 30%) and (max-ambient-light: 70%) {
+    .adapt { background-color: #666; color: red }
+    body { background-color: #eee}
+}

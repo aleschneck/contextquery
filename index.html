@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <title>@Context</title>
+    <link rel="import" href="templates/context.html">
+
+
+</head>
+<body class="body">
+<context-styles class="ctx" content="@context (min-ambient-light: 70%) and (max-ambient-light: 80%) { body { background-color: blue; }}" href="stylesheets/contexts.css"></context-styles>
+<header class="navbar">
+    <div class="container">
+        <nav>
+            <ul class="nav navbar-nav">
+                <li><a href="#">Link 1</a></li>
+                <li><a href="#">link 2</a></li>
+                <li><a href="#">link 3</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+<main>
+    <div class="container">
+        <div class="adapt">adapt</div>
+        <div class="test">test</div>
+        <div class="adapt">adapt 2</div>
+    </div>
+</main>
+<footer class="fix-bottom">
+    <div class="container">
+        <input id="in" type="number">
+    </div>
+</footer>
+</body>
+</html>
