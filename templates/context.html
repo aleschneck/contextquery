@@ -36,7 +36,9 @@
 
     let root = document.querySelector("html");
 
-    let contextRules = [];
+    let contextRules = [], attrsArr = [
+        ['min-ambient-light','max-ambient-light']
+    ];
 
     function generateClasses(str) {
         
@@ -59,24 +61,10 @@
             }
 
             for (let z of singleStyles){
-                let obj = {}, className, attrs; //attrsList, attrsObjArr = [];
+                let obj = {}, className, attrs; 
                 className = z.substring(0,z.indexOf("{"));
                 attrs =  z.substring(z.indexOf("{") + 1);
-                /*
-                attrsList = attrs.split(';');
-                console.log(attrs);         
-                for(let o of attrsList) {
-                    let v, sv, j = {};
-                    v = o.trim();            
-                    if(v != "") {  
-                        sv = v.split(':');
-                        j[sv[0].trim()] = sv[1].trim()
-                        attrsObjArr.push(j);
-                    }           
-                }
-                */
-                //console.log(attrsObjList);
-                obj[className.trim()] =  attrs.trim(); //attrsObjArr; 
+                obj[className.trim()] =  attrs.trim(); 
                 arrOfClasses.push(obj);
             }  
 
@@ -86,41 +74,15 @@
             
         }
         generateStyles(contextRules);
-        performCheck(ambientValue.ambient);
+        for (var i of attrsArr) {
+             performCheck(i,0);
+        }
+       
         console.log(contextRules);  
     }
         
 
-
-
-    function findClosingCurly(str){
-        var count = 0;
-        var startIdx = str.indexOf('{');
-        var lastIndex = [];
-        var pair = [];
-        for(var i = startIdx; i < str.length; i++) {
-            if(str[i] === "{") {
-                if(count % 2 == 0){
-                    pair.push(i);
-                }
-                count++;
-            } 
-            if(str[i] === "}"){
-                if(count % 2 != 0){
-                    console.log(count);
-                    pair.push(i);
-                    lastIndex.push(pair);
-                    pair = [];
-                }
-                count++;            
-            }
-        }
-        console.log(lastIndex);
-        return lastIndex;
-    }
-
     function get(url) {
-
         return new Promise(function(resolve, reject) {
             var req = new XMLHttpRequest();
             req.open('GET', url);
@@ -165,48 +127,37 @@
     }
     
     
-    function performCheck(setValue) {
+    function performCheck(attrs,setValue) {
         let len = contextRules.length;
         for (let i of contextRules) {
-            let min, max;
+            let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY;
             len--;
             for (let j of i[0]) {
-                if(typeof j['min-ambient-light'] != 'undefined') {
-                    min = j['min-ambient-light'];
-                }               
-                if(typeof j['max-ambient-light'] != 'undefined') {
-                    max = j['max-ambient-light'];
-                }                          
+                if(Object.keys(j)[0] == attrs[0]) {
+                    min = j[attrs[0]];
+                }         
+                if(Object.keys(j)[0] == attrs[1]) {
+                    max = j[attrs[1]];
+                }                        
             }
-            for(let k of i[1]){
-                let key = Object.keys(k)[0], clss = 'css-ctx-queries-' + (randomNum+len);//elmList, vals ,s;
-                //elmList = document.querySelectorAll(Object.keys(k));
-                //vals = Object.values(k);
+            if(min != -Infinity || max != Infinity) {
+                for(let k of i[1]){
+                    let key = Object.keys(k)[0], clss = 'css-ctx-queries-' + (randomNum+len);//elmList, vals ,s;
 
-                if( min <= setValue && setValue <= max ) {
-                    if(!root.classList.contains(clss)){
-                        root.classList.add(clss);
-                    }       
-                } else if ( setValue < min || max < setValue) {
-                    if(root.classList.contains(clss)) {
-                        root.classList.remove(clss);
-                    }             
-                }
-                /*
-                s = k[Object.keys(k)];
-                for(let elm of elmList) {
-                    for(let style of s){
-                        if( min <= setValue && setValue <= max ) {
-                            //console.log('add ' + Object.keys(style)[0]);
-                            elm.style[Object.keys(style)[0]] = Object.values(style)[0];
-                        } else if ( setValue < min || max < setValue) {
-                             //console.log('remove ' + Object.keys(style)[0]);
-                            elm.style.removeProperty(Object.keys(style)[0]);
-                        }
+                    if( min <= setValue && setValue <= max ) {
+                        if(!root.classList.contains(clss)){
+                            console.log('class added ' + clss + ' within min:' + min + ' max:' + max);
+                            root.classList.add(clss);
+                        }       
+                    } else if ( setValue < min || max < setValue) {
+                        if(root.classList.contains(clss)) {
+                            console.log('class removed ' + clss + ' within min:' + min + ' max:' + max);
+                            root.classList.remove(clss);
+                        }             
                     }
                 }
-                */
             }
+            
              
         }
     }
@@ -264,10 +215,11 @@
             }
         });
     }
-
+    
+    
     let ambientValue = {ambient: 0};
     ambientValue.watch('ambient',function(id, oldval, newval){
-        performCheck(newval);
+        performCheck(['min-ambient-light','max-ambient-light'],newval);
     });
     
     document.addEventListener('DOMContentLoaded',function(){
@@ -276,6 +228,11 @@
             ambientValue.ambient = this.value;
         });
     });
+
+    window.addEventListener('devicelight', function(e) {
+        //performCheck(['min-ambient-light','max-ambient-light'],e.value);
+    });
+    
     
 
 </script>

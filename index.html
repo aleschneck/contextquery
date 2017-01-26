@@ -5,6 +5,22 @@
 
     <title>@Context</title>
     <link rel="import" href="templates/context.html">
+    <script>
+        
+        let test = {test: 0};
+        test.watch('test',function(id, oldval, newval){
+            performCheck(['min-test','max-test'],newval);
+        });
+        
+        document.addEventListener('DOMContentLoaded',function(){
+            let inputElm = document.querySelector("#test");
+            inputElm.addEventListener('change',function(){
+                performCheck(['min-test','max-test'],this.value);
+            });
+        });
+        
+        
+    </script>
 
 
 </head>
@@ -30,7 +46,10 @@
 </main>
 <footer class="fix-bottom">
     <div class="container">
+        <label for="in">ambient</label>
         <input id="in" type="number">
+        <label for="test">test</label>
+        <input id="test" type="number">
     </div>
 </footer>
 </body>
