@@ -1,6 +1,7 @@
 <script>
 
-    let root = document.querySelector("html"), contextRules = [], 
+    let root = document.querySelector("html"), contextRules = [],
+    // TODO remove this 
     attrsArr = [
         ['min-devicelight','max-devicelight'],
         ['min-devicemotion','max-devicemotion']
@@ -15,16 +16,17 @@
 
         connectedCallback() {
             this.href();
-            this.style.display = 'none';              
+            this.style.display = 'none';     
         }
 
         content() {
-            let inner = this.innerHTML;
-            if( inner.trim() != '') {
-                generateClasses(inner.trim());
+            let inner = this.innerHTML;    
+            if(inner.trim() != ''){
+                generateClasses( inner.trim() );
             } else {
-                console.error('No styles declared, please use the href attribute or write your context-styles directly in the custom tag.');
-            }      
+                console.error('Context-Styles have not been declared, please use the href attribute or write them directly in the context-style tag.');
+            }
+                 
         }
 
         href() {
@@ -46,6 +48,7 @@
 
     window.customElements.define('context-style', contextStyle); 
 
+
     function generateClasses(str) {
         
         let contexts = str.split('@context');
@@ -55,6 +58,7 @@
             let arr = [],  arrOfObj = [], arrOfClasses = [], rules, ruleArr, styles, singleStyles;
             rules = i.substring(i.indexOf("("),i.indexOf("{"));
             ruleArr = rules.split(' and ');
+            console.log(ruleArr);
             styles = i.substring(i.indexOf("{") + 1,i.lastIndexOf("}"));
             singleStyles = styles.split('}');
             singleStyles.pop();
@@ -80,6 +84,9 @@
             
         }
         generateStyles(contextRules);
+
+        // perform first check on all attrs
+        // TODO remove this
         for (var i of attrsArr) {
              performCheck(i,0);
         }
