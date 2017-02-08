@@ -1,44 +1,52 @@
 <script>
-    class contextStyles extends HTMLElement {
+
+    let root = document.querySelector("html"), contextRules = [], 
+    attrsArr = [
+        ['min-ambient-light','max-ambient-light']
+    ];
+
+    const randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
+
+    class contextStyle extends HTMLElement {
         constructor() {
             super(); 
         }
 
         connectedCallback() {
-            this.href();         
-            //this.content();        
+            this.href();
+            this.style.display = 'none';              
         }
 
         content() {
-            if(this.hasAttribute('content') && this.getAttribute('content') != "") {
-                generateClasses( this.getAttribute('content'));
+            let inner = this.innerHTML;
+            if( inner.trim() != '') {
+                generateClasses(inner.trim());
             } else {
-                console.log('content empty or non existent');
+                console.error('No styles declared, please use the href attribute or write your context-styles directly in the custom tag.');
             }      
         }
 
         href() {
+            let that = this;
             if(this.hasAttribute('href') && this.getAttribute('href') != "") {
                 get(this.getAttribute('href')).then(function(response) {
                     generateClasses(response);
+                    that.content();
                 }, function(error) {
                     console.error("Failed!", error);
                 })
             } else {
                 console.log('href empty or non existent');
+                that.content();
             }   
         }
      
     }
 
-    window.customElements.define('context-styles', contextStyles);
+    window.customElements.define('context-style', contextStyle);
     
 
-    let root = document.querySelector("html");
-
-    let contextRules = [], attrsArr = [
-        ['min-ambient-light','max-ambient-light']
-    ];
+    
 
     function generateClasses(str) {
         
@@ -104,7 +112,6 @@
         });
     }
 
-    const randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
     function generateStyles() {
         let head = document.querySelector('head'), style = document.createElement('style'), len = contextRules.length, 
         suffix = '.css-ctx-queries-',css = "";
@@ -146,12 +153,12 @@
 
                     if( min <= setValue && setValue <= max ) {
                         if(!root.classList.contains(clss)){
-                            console.log('class added ' + clss + ' within min:' + min + ' max:' + max);
+                            //console.log('class added ' + clss + ' within min:' + min + ' max:' + max);
                             root.classList.add(clss);
                         }       
                     } else if ( setValue < min || max < setValue) {
                         if(root.classList.contains(clss)) {
-                            console.log('class removed ' + clss + ' within min:' + min + ' max:' + max);
+                            //console.log('class removed ' + clss + ' within min:' + min + ' max:' + max);
                             root.classList.remove(clss);
                         }             
                     }

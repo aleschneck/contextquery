@@ -5,6 +5,11 @@
 
     <title>@Context</title>
     <link rel="import" href="templates/context.html">
+    <context-style href="stylesheets/contexts.css">
+        @context (min-ambient-light: 70%) and (max-ambient-light: 80%) { 
+            body { background-color: blue; }
+        }
+    </context-style>
     <script>
         
         let test = {test: 0};
@@ -25,7 +30,7 @@
 
 </head>
 <body class="body">
-<context-styles class="ctx" content="@context (min-ambient-light: 70%) and (max-ambient-light: 80%) { body { background-color: blue; }}" href="stylesheets/contexts.css"></context-styles>
+
 <header class="navbar">
     <div class="container">
         <nav>
