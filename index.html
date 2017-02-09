@@ -6,25 +6,21 @@
     <title>@Context</title>
     <link rel="import" href="templates/context.html">
     <context-style href="stylesheets/contexts.css">
-        @context (min-ambient-light: 70%) and (max-ambient-light: 80%) { 
-            body { background-color: blue; }
+        @context (min-devicelight: 70%) and (max-devicelight: 80%) { 
+            body { background-color: blue; color: white; }
         }
     </context-style>
     <script>
-        
-        let test = {test: 0};
-        test.watch('test',function(id, oldval, newval){
-            performCheck(['min-test','max-test'],newval);
+        ambientValue.watch('ambient',function(id, oldval, newval){
+            performCheck(['min-devicelight','max-devicelight'],newval);
         });
         
         document.addEventListener('DOMContentLoaded',function(){
-            let inputElm = document.querySelector("#test");
+            let inputElm = document.querySelector("#in");
             inputElm.addEventListener('change',function(){
-                performCheck(['min-test','max-test'],this.value);
+                ambientValue.ambient = this.value;
             });
         });
-        
-        
     </script>
 
 
@@ -53,8 +49,6 @@
     <div class="container">
         <label for="in">ambient</label>
         <input id="in" type="number">
-        <label for="test">test</label>
-        <input id="test" type="number">
     </div>
 </footer>
 </body>

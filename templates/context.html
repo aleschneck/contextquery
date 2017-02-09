@@ -2,8 +2,10 @@
 
     let root = document.querySelector("html"), contextRules = [], 
     attrsArr = [
-        ['min-ambient-light','max-ambient-light']
+        ['min-devicelight','max-devicelight']
     ];
+
+    let ambientValue = {ambient: 0}; // only for test purposes
 
     const randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
 
@@ -222,22 +224,10 @@
             }
         });
     }
-    
-    
-    let ambientValue = {ambient: 0};
-    ambientValue.watch('ambient',function(id, oldval, newval){
-        performCheck(['min-ambient-light','max-ambient-light'],newval);
-    });
-    
-    document.addEventListener('DOMContentLoaded',function(){
-        let inputElm = document.querySelector("#in");
-        inputElm.addEventListener('change',function(){
-            ambientValue.ambient = this.value;
-        });
-    });
 
+    // event listener for devicelight
     window.addEventListener('devicelight', function(e) {
-        //performCheck(['min-ambient-light','max-ambient-light'],e.value);
+        //performCheck(['min-devicelight','max-devicelight'],e.value);
     });
     
     
