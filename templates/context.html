@@ -2,10 +2,9 @@
 
     let root = document.querySelector("html"), contextRules = [], 
     attrsArr = [
-        ['min-devicelight','max-devicelight']
+        ['min-devicelight','max-devicelight'],
+        ['min-devicemotion','max-devicemotion']
     ];
-
-    let ambientValue = {ambient: 0}; // only for test purposes
 
     const randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
 
@@ -45,10 +44,7 @@
      
     }
 
-    window.customElements.define('context-style', contextStyle);
-    
-
-    
+    window.customElements.define('context-style', contextStyle); 
 
     function generateClasses(str) {
         
@@ -171,65 +167,14 @@
         }
     }
 
-    /*
-    * object.watch polyfill
-    *
-    * 2012-04-03
-    *
-    * By Eli Grey, http://eligrey.com
-    * Public Domain.
-    * NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
-    */
-
-    // object.watch
-    if (!Object.prototype.watch) {
-        Object.defineProperty(Object.prototype, "watch", {
-            enumerable: false
-            , configurable: true
-            , writable: false
-            , value: function (prop, handler) {
-                var
-                oldval = this[prop]
-                , newval = oldval
-                , getter = function () {
-                    return newval;
-                }
-                , setter = function (val) {
-                    oldval = newval;
-                    return newval = handler.call(this, prop, oldval, val);
-                }
-                ;
-                
-                if (delete this[prop]) { // can't watch constants
-                    Object.defineProperty(this, prop, {
-                        get: getter
-                        , set: setter
-                        , enumerable: true
-                        , configurable: true
-                    });
-                }
-            }
-        });
-    }
-    // object.unwatch
-    if (!Object.prototype.unwatch) {
-        Object.defineProperty(Object.prototype, "unwatch", {
-            enumerable: false
-            , configurable: true
-            , writable: false
-            , value: function (prop) {
-                var val = this[prop];
-                delete this[prop]; // remove accessors
-                this[prop] = val;
-            }
-        });
-    }
 
     // event listener for devicelight
     window.addEventListener('devicelight', function(e) {
-        //performCheck(['min-devicelight','max-devicelight'],e.value);
+        performCheck(['min-devicelight','max-devicelight'],(e.value == Infinity)?0:e.value);
     });
-    
-    
+    // event listener for devicemotion
+    window.addEventListener('devicemotion', function(e) {
+        performCheck(['min-devicemotion','max-devicemotion'],(e.acceleration.x == null)?0:e.acceleration.x);
+    });
 
 </script>

@@ -7,3 +7,8 @@
     .adapt { background-color: #666; color: red }
     body { background-color: #eee}
 }
+
+@context (min-devicemotion: 30%) and (max-devicemotion: 70%) {
+    .adapt { background-color: #666; color: red }
+    body { background-color: #eee}
+}
