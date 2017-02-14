@@ -3,8 +3,8 @@
     let root = document.querySelector("html"), contextRules = [],
     // TODO remove this 
     attrsArr = [
-        ['min-devicelight','max-devicelight'],
-        ['min-devicemotion','max-devicemotion']
+        'devicelight',
+        'devicemotion'
     ];
 
     const randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
@@ -51,25 +51,80 @@
 
     function generateClasses(str) {
         
-        let contexts = str.split('@context');
+        let contexts = str.split('@context'), subtract = false;
         contexts.splice(0,1);
 
         for (let i of contexts) {
-            let arr = [],  arrOfObj = [], arrOfClasses = [], rules, ruleArr, styles, singleStyles;
+            let arr = [],  arrOfObj = [], arrOfClasses = [], rules, ruleArr, styles, singleStyles, lt = '&lt;', gt = '&gt;', lteq = '&lt;=', gteq = '&gt;=';
             rules = i.substring(i.indexOf("("),i.indexOf("{"));
-            ruleArr = rules.split(' and ');
-            console.log(ruleArr);
+
+            if( rules.includes(lt) || rules.includes(gt) ) {
+                rules = rules.substring(rules.indexOf("(")+1,rules.indexOf(")")), prcnt = '%', obj = {};
+            
+                if (rules.includes(lt) && rules.includes(gt)) {
+                    console.error('you have mixed the greater than and less than signs in an expression!');
+                    return;
+                }
+                // TODO combine gt with gt= or lt with lt=
+                if (rules.includes(lt)) {
+                    if (rules.includes(lteq)) {
+                        ruleArr = rules.split(lteq);
+                        console.log(ruleArr);
+                    } else {
+                        ruleArr = rules.split(lt);
+                        subtract = true;
+                    }         
+                    if(ruleArr.length == 2) {
+                        if(ruleArr[0].includes(prcnt) || !isNaN(ruleArr[0])) {
+                            obj['min-' + ruleArr[1].trim()] = parseFloat(ruleArr[0]);
+                        } else {
+                            obj['max-' + ruleArr[0].trim()] = parseFloat(ruleArr[1]);
+                        }
+                    } else {
+                        let obj2 = {};
+                        obj2['min-' + ruleArr[1].trim()] = parseFloat(ruleArr[0]);
+                        obj['max-' + ruleArr[1].trim()] = parseFloat(ruleArr[2]);
+                        arrOfObj.push(obj2);
+                    }
+                    arrOfObj.push(obj);
+
+                }
+                if (rules.includes(gt)) {
+                    if (rules.includes(gteq)) {
+                        ruleArr = rules.split(gteq);
+                    } else {
+                        ruleArr = rules.split(gt);
+                        subtract = true;
+                    } 
+                    if(ruleArr.length == 2) {
+                        if(ruleArr[0].includes(prcnt) || !isNaN(ruleArr[0])) {
+                            obj['max-' + ruleArr[1].trim()] = parseFloat(ruleArr[0]);
+                        } else {
+                            obj['min-' + ruleArr[0].trim()] = parseFloat(ruleArr[1]);
+                        }
+                        
+                    } else {
+                        let obj2 = {};
+                        obj['max-' + ruleArr[1].trim()] = parseFloat(ruleArr[0]);
+                        obj2['min-' + ruleArr[1].trim()] = parseFloat(ruleArr[2]);
+                        arrOfObj.push(obj2);
+                    }
+                    arrOfObj.push(obj);    
+                }
+            } else {
+                ruleArr = rules.split('and');
+                for (let j of ruleArr) {
+                    let obj = {}, inner, a;
+                    inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));
+                    a = inner.split(':');                   
+                    obj[a[0]] = parseFloat(a[1]);
+                    arrOfObj.push(obj);
+                }
+            }
             styles = i.substring(i.indexOf("{") + 1,i.lastIndexOf("}"));
             singleStyles = styles.split('}');
             singleStyles.pop();
-            for (let j of ruleArr) {
-                let obj = {}, inner, a;
-                inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));
-                a = inner.split(':');                   
-                obj[a[0]] = parseFloat(a[1]);
-                arrOfObj.push(obj);
-            }
-
+            
             for (let z of singleStyles){
                 let obj = {}, className, attrs; 
                 className = z.substring(0,z.indexOf("{"));
@@ -78,8 +133,11 @@
                 arrOfClasses.push(obj);
             }  
 
-            arr.push(arrOfObj);
-            arr.push(arrOfClasses);   
+            arr.push(arrOfObj);           
+            arr.push(arrOfClasses);
+            if(subtract) {
+                arr.push(subtract);
+            }      
             contextRules.push(arr);          
             
         }
@@ -139,19 +197,22 @@
     }
     
     
-    function performCheck(attrs,setValue) {
+    function performCheck(fname,setValue) {
         let len = contextRules.length;
         for (let i of contextRules) {
-            let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY;
+            let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, fMin = 'min-' + fname, fMax = 'max-' + fname;
             len--;
             for (let j of i[0]) {
-                if(Object.keys(j)[0] == attrs[0]) {
-                    min = j[attrs[0]];
+                if(Object.keys(j)[0] == fMin) {
+                    min = j[fMin];
                 }         
-                if(Object.keys(j)[0] == attrs[1]) {
-                    max = j[attrs[1]];
+                if(Object.keys(j)[0] == fMax) {
+                    max = j[fMax];
                 }                        
             }
+            if(i[2]) {
+                ++min; --max;
+            } 
             if(min != -Infinity || max != Infinity) {
                 for(let k of i[1]){
                     let key = Object.keys(k)[0], clss = 'css-ctx-queries-' + (randomNum+len);//elmList, vals ,s;
@@ -177,11 +238,11 @@
 
     // event listener for devicelight
     window.addEventListener('devicelight', function(e) {
-        performCheck(['min-devicelight','max-devicelight'],(e.value == Infinity)?0:e.value);
+        performCheck('devicelight',(e.value == Infinity)?0:e.value);
     });
     // event listener for devicemotion
     window.addEventListener('devicemotion', function(e) {
-        performCheck(['min-devicemotion','max-devicemotion'],(e.acceleration.x == null)?0:e.acceleration.x);
+        performCheck('devicemotion',(e.acceleration.x == null)?0:e.acceleration.x);
     });
 
 </script>
