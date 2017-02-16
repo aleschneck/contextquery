@@ -48,10 +48,44 @@
 
     window.customElements.define('context-style', contextStyle); 
 
+    function mixedSigns(arr,symbol,indc) {
+        if (arr.length == 2) {
+            let left = false, tmpArr, tmpStr;
+            for (let idx in arr) {
+                if(arr[idx].includes(symbol)) {
+                    tmpStr = arr[idx];
+                    arr.splice(idx,1);
+                    if(idx==0) {
+                        left = true;
+                    } 
+                }
+            }
+            tmpArr = tmpStr.split(symbol);
+            if (left) {
+                arr.unshift(tmpArr[1]);
+                arr.unshift(tmpArr[0]);
+                if( symbol === '&lt;') {
+                    indc[0] = true;
+                } else {
+                    indc[1] = true;
+                }
+                
+            } else {
+                arr.push(tmpArr[0]);
+                arr.push(tmpArr[1]);
+                if( symbol === '&lt;') {
+                    indc[1] = true;
+                } else {
+                    indc[0] = true;
+                }
+            }
+            //console.log(arr);
+        }
+    }
 
     function generateClasses(str) {
         
-        let contexts = str.split('@context'), subtract = false;
+        let contexts = str.split('@context'), incdec = [false,false];
         contexts.splice(0,1);
 
         for (let i of contexts) {
@@ -62,17 +96,17 @@
                 rules = rules.substring(rules.indexOf("(")+1,rules.indexOf(")")), prcnt = '%', obj = {};
             
                 if (rules.includes(lt) && rules.includes(gt)) {
-                    console.error('you have mixed the greater than and less than signs in an expression!');
+                    console.error('you have mixed the greater than and less than symbol in an expression!');
                     return;
                 }
                 // TODO combine gt with gt= or lt with lt=
                 if (rules.includes(lt)) {
                     if (rules.includes(lteq)) {
                         ruleArr = rules.split(lteq);
-                        console.log(ruleArr);
+                        mixedSigns(ruleArr,lt,incdec);
                     } else {
                         ruleArr = rules.split(lt);
-                        subtract = true;
+                        incdec = [true,true];
                     }         
                     if(ruleArr.length == 2) {
                         if(ruleArr[0].includes(prcnt) || !isNaN(ruleArr[0])) {
@@ -92,9 +126,10 @@
                 if (rules.includes(gt)) {
                     if (rules.includes(gteq)) {
                         ruleArr = rules.split(gteq);
+                        mixedSigns(ruleArr,gt,incdec);
                     } else {
                         ruleArr = rules.split(gt);
-                        subtract = true;
+                        incdec = [true,true];
                     } 
                     if(ruleArr.length == 2) {
                         if(ruleArr[0].includes(prcnt) || !isNaN(ruleArr[0])) {
@@ -135,9 +170,11 @@
 
             arr.push(arrOfObj);           
             arr.push(arrOfClasses);
-            if(subtract) {
-                arr.push(subtract);
-            }      
+            if( incdec[0] || incdec[1] ) {
+                arr.push(incdec);
+            }  
+            
+
             contextRules.push(arr);          
             
         }
@@ -211,8 +248,13 @@
                 }                        
             }
             if(i[2]) {
-                ++min; --max;
-            } 
+                if(i[2][0]) {
+                    ++min; 
+                } 
+                if(i[2][1]) {
+                    --max;
+                }
+            }       
             if(min != -Infinity || max != Infinity) {
                 for(let k of i[1]){
                     let key = Object.keys(k)[0], clss = 'css-ctx-queries-' + (randomNum+len);//elmList, vals ,s;

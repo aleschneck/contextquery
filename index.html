@@ -9,7 +9,7 @@
         @context (max-devicelight:15)and(min-devicelight:5) { 
             body { background-color: red;}
         }
-        @context (devicelight>=20) { 
+        @context (10 <= devicelight < 20 ) { 
             body { background-color: blue; color: white; }
         }
     </context-style>
