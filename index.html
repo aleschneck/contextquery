@@ -5,11 +5,11 @@
 
     <title>@Context</title>
     <link rel="import" href="templates/context.html">
-    <context-style>
+    <context-style href="stylesheets/contexts.css">
         @context (max-devicelight:15)and(min-devicelight:5) { 
             body { background-color: red;}
         }
-        @context (10 <= devicelight < 20 ) { 
+        @context (10 < devicelight <= 20) { 
             body { background-color: blue; color: white; }
         }
     </context-style>

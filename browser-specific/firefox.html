@@ -1,6 +1,12 @@
-<script>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
 
-    const supportsCustomElementsV1 = 'customElements' in window, randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
+    <title>@Context</title>
+    <script>
+
+    const randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
 
     if (supportsCustomElementsV1) {
         console.log('Custom Elements V1 supported');
@@ -289,3 +295,109 @@
     });
 
 </script>
+    <context-style href="stylesheets/contexts.css">
+        @context (max-devicelight:15)and(min-devicelight:5) { 
+            body { background-color: red;}
+        }
+        @context (10 < devicelight <= 20) { 
+            body { background-color: blue; color: white; }
+        }
+    </context-style>
+    <script>
+        /*
+        * object.watch polyfill
+        *
+        * 2012-04-03
+        *
+        * By Eli Grey, http://eligrey.com
+        * Public Domain.
+        * NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+        */
+
+        // object.watch
+        if (!Object.prototype.watch) {
+            Object.defineProperty(Object.prototype, "watch", {
+                enumerable: false
+                , configurable: true
+                , writable: false
+                , value: function (prop, handler) {
+                    var
+                    oldval = this[prop]
+                    , newval = oldval
+                    , getter = function () {
+                        return newval;
+                    }
+                    , setter = function (val) {
+                        oldval = newval;
+                        return newval = handler.call(this, prop, oldval, val);
+                    }
+                    ;
+                    
+                    if (delete this[prop]) { // can't watch constants
+                        Object.defineProperty(this, prop, {
+                            get: getter
+                            , set: setter
+                            , enumerable: true
+                            , configurable: true
+                        });
+                    }
+                }
+            });
+        }
+        // object.unwatch
+        if (!Object.prototype.unwatch) {
+            Object.defineProperty(Object.prototype, "unwatch", {
+                enumerable: false
+                , configurable: true
+                , writable: false
+                , value: function (prop) {
+                    var val = this[prop];
+                    delete this[prop]; // remove accessors
+                    this[prop] = val;
+                }
+            });
+        }
+
+        let ambientValue = {ambient: 0};
+
+        ambientValue.watch('ambient',function(id, oldval, newval){
+            performCheck('devicelight',newval);
+        });
+        
+        document.addEventListener('DOMContentLoaded',function(){
+            let inputElm = document.querySelector("#in");
+            inputElm.addEventListener('change',function(){
+                ambientValue.ambient = this.value;
+            });
+        });
+    </script>
+
+</head>
+<body class="body">
+
+<header class="navbar">
+    <div class="container">
+        <nav>
+            <ul class="nav navbar-nav">
+                <li><a href="#">Link 1</a></li>
+                <li><a href="#">link 2</a></li>
+                <li><a href="#">link 3</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+<main>
+    <div class="container">
+        <div class="adapt">adapt</div>
+        <div class="test">test</div>
+        <div class="adapt">adapt 2</div>
+    </div>
+</main>
+<footer class="fix-bottom">
+    <div class="container">
+        <label for="in">ambient</label>
+        <input id="in" type="number">
+    </div>
+</footer>
+</body>
+</html>
