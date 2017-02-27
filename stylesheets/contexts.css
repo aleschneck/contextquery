@@ -1,3 +1,7 @@
+@context (10% >= devicelight) {
+    html { background-color: #eee }
+}
+
 @context (max-devicelight: 40%) {
     .adapt { background-color: #000; color: #fff; font-size: 24px }
     .test { color: #fff }

@@ -222,7 +222,12 @@
             len--;
             for(let styl of i[1]) {
                 let key = Object.keys(styl)[0];
-                css +=  suffix + (randomNum + len) + ' ' + key + '{' + Object.values(styl)[0] + '}';
+                console.log(key);
+                if(key === 'html') {
+                    css += key + suffix + (randomNum + len) + '{' + Object.values(styl)[0] + '}';
+                } else {
+                    css +=  suffix + (randomNum + len) + ' ' + key + '{' + Object.values(styl)[0] + '}';
+                }            
             }
         }
         if(document.getElementById('cssCtxQueriesStyleTag')) {
