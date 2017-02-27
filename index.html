@@ -5,9 +5,9 @@
 
     <title>@Context</title>
     <script type="text/javascript" src="js/webcomponents-hi-sd-ce.js"></script>
-    <link rel="import" href="templates/context.html">
+    <link rel="import" href="dist/context.html">
     <context-style href="stylesheets/contexts.css">
-        @context (max-devicelight:15)and(min-devicelight:5) { 
+        @context (max-devicelight:15) and (min-devicelight:5) { 
             body { background-color: red;}
         }
         @context (10 < devicelight <= 20) { 
@@ -20,7 +20,7 @@
         document.addEventListener('DOMContentLoaded',function(){
             inputElm = document.querySelector("#in");
             inputElm.addEventListener('change',function(){
-                performCheck('devicelight',inputElm.value); // this not supported in Firefox
+                performCheck( 'devicelight', inputElm.value ); // this not supported in Firefox
             });
         });
 
