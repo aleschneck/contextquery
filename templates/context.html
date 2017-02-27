@@ -3,11 +3,10 @@
     const supportsCustomElementsV1 = 'customElements' in window, randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
 
     if (supportsCustomElementsV1) {
-        console.log('Custom Elements V1 supported');
+        //console.log('Custom Elements V1 supported');
     } 
 
     let root = document.querySelector("html"), contextRules = [];
-
 
     class contextStyle extends HTMLElement {
         constructor() {
@@ -52,7 +51,7 @@
     function mixedSigns(arr,symbol,indc) {
         if (arr.length == 2) {
             let left = false, tmpArr, tmpStr;
-            for (let idx in arr) {
+            for (let idx in arr) {            
                 // check if symbol is present, &lt; or &gt;
                 if(arr[idx].includes(symbol)) {
                     tmpStr = arr[idx];
@@ -62,6 +61,7 @@
                     } 
                 }
             }
+
             // if tmpStr has been assigned value
             if(tmpStr != undefined) {
                 tmpArr = tmpStr.split(symbol);
@@ -105,7 +105,7 @@
                     console.error('you have mixed the greater than and less than symbol in an expression!');
                     return;
                 }
-                // TODO combine gt with gt= or lt with lt=
+            
                 if (rules.includes(lt)) {
                     if (rules.includes(lteq)) {
                         ruleArr = rules.split(lteq);
@@ -180,14 +180,14 @@
                 arr.push(incdec);
             }  
             
-
             contextRules.push(arr);          
             
         }
 
         generateStyles(contextRules);
-       
-        console.log(contextRules);  
+        
+        // Show array on the console
+        //console.log(contextRules);  
     }
         
 
@@ -279,12 +279,10 @@
 
     // event listener for devicelight
     window.addEventListener('devicelight', function(e) {
-        console.log('devicelight listener kicked in');
         performCheck('devicelight',(e.value == Infinity)?0:e.value);
     });
     // event listener for devicemotion
     window.addEventListener('devicemotion', function(e) {
-        console.log('devicemotion listener kicked in');
         performCheck('devicemotion',(e.acceleration.x == null)?0:e.acceleration.x);
     });
 
