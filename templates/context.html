@@ -256,10 +256,9 @@
                     --max;
                 }
             }       
-            if(min != -Infinity || max != Infinity) {
+            if(min != -Infinity || max != Infinity) {  
                 for(let k of i[1]){
-                    let key = Object.keys(k)[0], clss = 'css-ctx-queries-' + (randomNum+len);//elmList, vals ,s;
-
+                    let key = Object.keys(k)[0], clss = 'css-ctx-queries-' + (randomNum + len); //elmList, vals ,s;
                     if( min <= setValue && setValue <= max ) {
                         if(!root.classList.contains(clss)){
                             //console.log('class added ' + clss + ' within min:' + min + ' max:' + max);
@@ -278,13 +277,14 @@
         }
     }
 
-
     // event listener for devicelight
     window.addEventListener('devicelight', function(e) {
+        console.log('devicelight listener kicked in');
         performCheck('devicelight',(e.value == Infinity)?0:e.value);
     });
     // event listener for devicemotion
     window.addEventListener('devicemotion', function(e) {
+        console.log('devicemotion listener kicked in');
         performCheck('devicemotion',(e.acceleration.x == null)?0:e.acceleration.x);
     });
 
