@@ -1,10 +1,6 @@
 <script>
 
-    const supportsCustomElementsV1 = 'customElements' in window, randomNum = Math.floor(Math.random() * (999 - 801 +1)) + 801;
-
-    if (supportsCustomElementsV1) {
-        //console.log('Custom Elements V1 supported');
-    } 
+    const randomNum = Math.floor(Math.random() * (900 - 701 +1)) + 701;
 
     let root = document.querySelector("html"), contextRules = [];
 
@@ -21,7 +17,7 @@
         content() {
             let inner = this.innerHTML;    
             if(inner.trim() != ''){
-                generateClasses( inner.trim() );
+                generateContextStyles( inner.trim() );
             } else {
                 console.error('Context-Styles have not been declared, please use the href attribute or write them directly in the context-style tag.');
             }
@@ -29,18 +25,18 @@
         }
 
         href() {
-            let that = this;
+            let self = this;
             if(this.hasAttribute('href') && this.getAttribute('href') != "") {
                 get(this.getAttribute('href')).then(function(response) {
                     let rstr = response.replace(/>/g, '&gt;').replace(/</g, '&lt;');
-                    generateClasses(rstr);
-                    that.content();
+                    generateContextStyles(rstr);
+                    self.content();
                 }, function(error) {
                     console.error("Failed!", error);
                 })
             } else {
                 console.log('href empty or non existent');
-                that.content();
+                self.content();
             }   
         }
      
@@ -89,7 +85,7 @@
         }
     }
 
-    function generateClasses(str) {
+    function generateContextStyles(str) {
         
         let contexts = str.split('@context'), incdec = [false,false];
         contexts.splice(0,1);
@@ -184,7 +180,7 @@
             
         }
 
-        generateStyles(contextRules);
+        appendStyles(contextRules);
         
         // Show array on the console
         //console.log(contextRules);  
@@ -213,7 +209,8 @@
         });
     }
 
-    function generateStyles() {
+    // Append generated styles to head tag
+    function appendStyles() {
         let head = document.querySelector('head'), style = document.createElement('style'), len = contextRules.length, 
         suffix = '.css-ctx-queries-',css = "";
         style.type = 'text/css';
@@ -238,8 +235,8 @@
         }
     }
     
-    
-    function performCheck(fname,setValue) {
+    // Add and remove the classes on the html tag 
+    function performContextCheck(fname,setValue) {
         let len = contextRules.length;
         for (let i of contextRules) {
             let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, fMin = 'min-' + fname, fMax = 'max-' + fname;
@@ -283,11 +280,11 @@
 
     // event listener for devicelight
     window.addEventListener('devicelight', function(e) {
-        performCheck('devicelight',(e.value == Infinity)?0:e.value);
+        performContextCheck('devicelight',e.value);
     });
     // event listener for devicemotion
     window.addEventListener('devicemotion', function(e) {
-        performCheck('devicemotion',(e.acceleration.x == null)?0:e.acceleration.x);
+        performContextCheck('devicemotion',(e.acceleration.x == null)?0:e.acceleration.x);
     });
 
 </script>

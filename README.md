@@ -1,0 +1,3 @@
+# Context-Style
+
+Context-Style is a HTML custom element that allows developers to write context dependent style sheets with the utterly known CSS syntax. It builds upon the idea of media queries, where breakpoints are set to define different style rules. Media queries are mainly based on the viewport whereas Context-Style integrates some of the still in development Web APIs like DeviceLightEvent and DeviceMotionEvent to determine the context in which the users are.
