@@ -1,19 +1,14 @@
 {
-  "name": "server-lite",
-  "version": "1.0.0",
-  "description": "lite server for http purposes.",
-  "scripts": {
-    "lite": "lite-server –port 10001",
-    "start": "npm run lite"
-  },
+  "name": "context-style",
+  "version": "0.0.1",
+  "description": "Gulp minify services.",
   "author": "",
-  "license": "ISC",
+  "license": "",
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-htmlmin": "^3.0.0",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^2.0.1",
-    "lite-server": "^1.3.1",
     "pump": "^1.0.2",
     "uglify-js-harmony": "^2.7.5"
   }

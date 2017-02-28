@@ -11,7 +11,7 @@ gulp.task('compress', function (cb) {
     };
 
   pump([
-        gulp.src('templates/*.js'),
+        gulp.src('src/*.js'),
         minifier({}, uglifyjs),
         rename({ suffix: '.min' }),
         gulp.dest('dist')
@@ -22,9 +22,9 @@ gulp.task('compress', function (cb) {
 
 
 gulp.task('minify', function() {
-  return gulp.src('templates/*.html')
-    .pipe(htmlmin({collapseWhitespace: true}))
-    .pipe(htmlmin({minifyJS: minifier({}, uglifyjs)}))
+  return gulp.src('src/*.html')
+    .pipe(htmlmin({collapseWhitespace: true, minifyJS: minifier({}, uglifyjs)}))
     .pipe(rename({ suffix: '.min' }))
-    .pipe(gulp.dest('dist'));
+    .pipe(gulp.dest('dist'))
+    .pipe(gulp.dest('example/html'));
 });
