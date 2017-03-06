@@ -14,7 +14,8 @@ gulp.task('compress', function (cb) {
         gulp.src('src/*.js'),
         minifier({}, uglifyjs),
         rename({ suffix: '.min' }),
-        gulp.dest('dist')
+        gulp.dest('dist'),
+        gulp.dest('example/html')
     ],
     cb
   );
