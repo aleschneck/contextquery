@@ -42,8 +42,14 @@
      
     }
 
-    customElements.define('context-style', contextStyle); 
+    customElements.define('context-style', contextStyle);
 
+
+    /**
+     * @param {array} arr
+     * @param {string} symbol
+     * @param {array} indc
+     */
     function mixedSigns(arr,symbol,indc) {
         if (arr.length == 2) {
             let left = false, tmpArr, tmpStr;
@@ -85,6 +91,9 @@
         }
     }
 
+    /**
+     * @param {string} str
+     */
     function generateContextStyles(str) {
         
         let contexts = str.split('@context'), incdec = [false,false];
@@ -185,8 +194,10 @@
         // Show array on the console
         //console.log(contextRules);  
     }
-        
 
+    /**   
+     * @param {string} url
+     */
     function get(url) {
         return new Promise(function(resolve, reject) {
             var req = new XMLHttpRequest();
@@ -235,8 +246,12 @@
         }
     }
     
-    // Add and remove the classes on the html tag 
-    function performContextCheck(fname,setValue) {
+    // Add and remove the classes on the html tag
+    /**   
+     * @param {string} fname
+     * @param {number} val
+     */
+    function performContextCheck(fname,val) {
         let len = contextRules.length;
         for (let i of contextRules) {
             let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, fMin = 'min-' + fname, fMax = 'max-' + fname;
@@ -260,12 +275,12 @@
             if(min != -Infinity || max != Infinity) {  
                 for(let k of i[1]){
                     let key = Object.keys(k)[0], clss = 'css-ctx-queries-' + (randomNum + len); //elmList, vals ,s;
-                    if( min <= setValue && setValue <= max ) {
+                    if( min <= val && val <= max ) {
                         if(!root.classList.contains(clss)){
                             //console.log('class added ' + clss + ' within min:' + min + ' max:' + max);
                             root.classList.add(clss);
                         }       
-                    } else if ( setValue < min || max < setValue) {
+                    } else if ( val < min || max < val) {
                         if(root.classList.contains(clss)) {
                             //console.log('class removed ' + clss + ' within min:' + min + ' max:' + max);
                             root.classList.remove(clss);
