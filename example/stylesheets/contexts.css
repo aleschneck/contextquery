@@ -3,8 +3,7 @@
 }
 
 @context (max-devicelight: 40%) {
-    .adapt { background-color: #000; color: #fff; font-size: 24px }
-    .test { color: #fff }
+    .adapt, label { background-color: #000; color: #fff; }
 }
 
 @context (30% <= devicelight <= 70%) {

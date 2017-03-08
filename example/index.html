@@ -6,6 +6,39 @@
     <title>@Context</title>
     <script type="text/javascript" src="js/webcomponents-hi-sd-ce.js"></script>
     <link rel="import" href="html/context.min.html">
+
+    <style>
+        html, body {
+            position: relative;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        body {
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        label {
+            margin-bottom: 24px;
+            
+        }
+        label, input[type="range"], .adapt {
+            display: inline-block;
+            width: 100%;
+            padding: 6px;
+        }
+        .adapt {
+            margin: 10% 0;
+            font-size: 200px;
+            font-weight: 600;
+            display: inline-block;
+        }
+    </style>
     <context-style href="stylesheets/contexts.css">
         @context (max-devicelight:15) and (min-devicelight:5) { 
             body { background-color: red;}
@@ -18,11 +51,13 @@
     </context-style>
     <script>
 
-        let inputElm;
+        let inputElm, outputElm;
         document.addEventListener('DOMContentLoaded',function(){
             inputElm = document.querySelector("#in");
+            outputElm = document.querySelector('.adapt');
             inputElm.addEventListener('change',function(){
                 performContextCheck( 'devicelight', inputElm.value ); // this not supported in Firefox
+                outputElm.innerHTML = inputElm.value;
             });
         });
 
@@ -37,27 +72,17 @@
 <body class="body">
 
 <header class="navbar">
-    <div class="container">
-        <nav>
-            <ul class="nav navbar-nav">
-                <li><a href="#">Link 1</a></li>
-                <li><a href="#">link 2</a></li>
-                <li><a href="#">link 3</a></li>
-            </ul>
-        </nav>
-    </div>
 </header>
 <main>
     <div class="container">
-        <div class="adapt">adapt</div>
-        <div class="test">test</div>
-        <div class="adapt">adapt 2</div>
+        <div class="adapt">0</div>
     </div>
 </main>
 <footer class="fix-bottom">
     <div class="container">
-        <label for="in">ambient</label>
-        <input id="in" type="number">
+        <label for="in">device light</label>
+        <!--<input id="in" type="number">-->
+        <input type="range" id="in" name="in" value="0">
     </div>
 </footer>
 </body>

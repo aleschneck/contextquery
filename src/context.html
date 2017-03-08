@@ -172,13 +172,17 @@
             singleStyles.pop();
             
             for (let z of singleStyles){
-                let obj = {}, className, attrs; 
-                className = z.substring(0,z.indexOf("{"));
-                attrs =  z.substring(z.indexOf("{") + 1);
-                obj[className.trim()] =  attrs.trim(); 
-                arrOfClasses.push(obj);
+                let classes, attrs, classArr; 
+                classes = z.substring(0,z.indexOf("{"));
+                attrs =  z.substring(z.indexOf("{") + 1);                             
+                classArr = classes.split(',');
+                for(let sc of classArr) {
+                    let obj = {};
+                    obj[sc.trim()] =  attrs.trim(); 
+                    arrOfClasses.push(obj);
+                }
             }  
-
+            
             arr.push(arrOfObj);           
             arr.push(arrOfClasses);
             if( incdec[0] || incdec[1] ) {
@@ -192,7 +196,7 @@
         appendStyles(contextRules);
         
         // Show array on the console
-        //console.log(contextRules);  
+        // console.log(contextRules);  
     }
 
     /**   
