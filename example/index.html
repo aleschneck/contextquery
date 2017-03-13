@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
 
     <title>@Context</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="text/javascript" src="js/webcomponents-hi-sd-ce.js"></script>
     <link rel="import" href="html/context.min.html">
 
@@ -21,16 +22,21 @@
         .container {
             max-width: 400px;
             margin: 0 auto;
+            padding: 0 15px;
             text-align: center;
         }
         label {
             margin-bottom: 24px;
             
         }
+        input[type="range"] {
+            margin: 0;
+        }
         label, input[type="range"], .adapt {
             display: inline-block;
             width: 100%;
-            padding: 6px;
+            padding: 6px 0;
+            border: none;
         }
         .adapt {
             margin: 10% 0;
@@ -39,14 +45,12 @@
             display: inline-block;
         }
     </style>
-    <context-style href="stylesheets/contexts.css">
-        @context (max-devicelight:15) and (min-devicelight:5) { 
-            body { background-color: red;}
+    <context-style>
+        @context (devicelight > 40) { 
+            body { background-color: black; color: white; }
         }
-        @context (10 < devicelight <= 20) { 
-            body { background-color: blue; color: white; }
-            a { color: #fff; }
-            a:hover { text-decoration: none; }
+        @context (deviceproximity < 1) {
+            body, input { background-color: black; color: black; }
         }
     </context-style>
     <script>
@@ -75,14 +79,17 @@
 </header>
 <main>
     <div class="container">
-        <div class="adapt">0</div>
+        <div class="inner">
+            <div class="adapt">0</div>
+        </div>
     </div>
 </main>
 <footer class="fix-bottom">
     <div class="container">
-        <label for="in">device light</label>
-        <!--<input id="in" type="number">-->
-        <input type="range" id="in" name="in" value="0">
+        <div class="inner">
+            <label for="in">device light</label>
+            <input type="range" id="in" name="in" value="0">
+        </div>
     </div>
 </footer>
 </body>

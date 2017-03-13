@@ -297,13 +297,25 @@
         }
     }
 
-    // event listener for devicelight
-    window.addEventListener('devicelight', function(e) {
-        performContextCheck('devicelight',e.value);
+     // event listener for devicelight
+    window.addEventListener('devicelight', function(e) {      
+        let normalised = e.value / 10; // normalise range from 0 to 100 max value on nexus 4 is 1000
+        //console.log(normalised);
+        performContextCheck('devicelight',Math.round(normalised));
     });
+
     // event listener for devicemotion
+    let initMotion = 0;
     window.addEventListener('devicemotion', function(e) {
-        performContextCheck('devicemotion',(e.acceleration.x == null)?0:e.acceleration.x);
+        //console.log(Math.abs(e.acceleration.x));
+        performContextCheck('devicemotion',(e.acceleration.x == null)?0:Math.abs(e.acceleration.x));
+        
     });
+
+    // event listener for devicemotion
+    window.addEventListener('deviceproximity', function(e) {
+        let normalise = ((e.value - e.min)/(e.max - e.min)) * 100;
+        performContextCheck('deviceproximity',normalise);
+    });;
 
 </script>
