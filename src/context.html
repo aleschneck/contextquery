@@ -305,17 +305,20 @@
     });
 
     // event listener for devicemotion
-    let initMotion = 0;
-    window.addEventListener('devicemotion', function(e) {
-        //console.log(Math.abs(e.acceleration.x));
-        performContextCheck('devicemotion',(e.acceleration.x == null)?0:Math.abs(e.acceleration.x));
-        
+    let acceleration = 0;
+    window.addEventListener('devicemotion', function(e) {      
+        let accel = Math.round(Math.sqrt(e.acceleration.y*e.acceleration.y + e.acceleration.x*e.acceleration.x));   
+        if (accel > acceleration || accel == 0) {
+            console.log(accel);
+            acceleration = accel;
+            performContextCheck('devicemotion', accel);
+        }
     });
 
     // event listener for devicemotion
     window.addEventListener('deviceproximity', function(e) {
         let normalise = ((e.value - e.min)/(e.max - e.min)) * 100;
         performContextCheck('deviceproximity',normalise);
-    });;
+    });
 
 </script>

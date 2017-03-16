@@ -295,7 +295,7 @@ function performContextCheck(fname,val) {
     }
 }
 
- // event listener for devicelight
+    // event listener for devicelight
 window.addEventListener('devicelight', function(e) {      
     let normalised = e.value / 10; // normalise range from 0 to 100 max value on nexus 4 is 1000
     //console.log(normalised);
@@ -303,11 +303,14 @@ window.addEventListener('devicelight', function(e) {
 });
 
 // event listener for devicemotion
-let initMotion = 0;
-window.addEventListener('devicemotion', function(e) {
-    //console.log(Math.abs(e.acceleration.x));
-    performContextCheck('devicemotion',(e.acceleration.x == null)?0:Math.abs(e.acceleration.x));
-    
+let acceleration = 0;
+window.addEventListener('devicemotion', function(e) {      
+    let accel = Math.round(Math.sqrt(e.acceleration.y*e.acceleration.y + e.acceleration.x*e.acceleration.x));   
+    if (accel > acceleration || accel == 0) {
+        console.log(accel);
+        acceleration = accel;
+        performContextCheck('devicemotion', accel);
+    }
 });
 
 // event listener for devicemotion
