@@ -46,15 +46,9 @@
         }
     </style>
     <context-style>
-        @context (devicelight > 10) { 
+        @context (devicelight > 30), (devicemotion > 5) { 
             body { background-color: black; color: white; }
-        }
-        @context (devicemotion > 5) {
-            body, input { background-color: blue; color: black; }
-        }
-        @context (deviceproximity < 1) {
-            body, input { background-color: black; color: black; }
-        }
+        } 
     </context-style>
     <script>
 
