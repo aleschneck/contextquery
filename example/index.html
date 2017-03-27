@@ -44,11 +44,46 @@
             font-weight: 600;
             display: inline-block;
         }
+        .code {
+           text-align: left;
+           padding: 36px 12px;
+        }
+        .code .rule {
+            color: blue;
+        }
+        .code .feat {
+            color: red;
+        }
+        .code .value {
+            color: green;
+        }
+        .code .stringval {
+            color: cornflowerblue;
+        }
+        .code .selector {
+            color: darkred;
+        }
+
     </style>
     <context-style>
-        @context (devicelight > 30), (devicemotion > 5) { 
-            body { background-color: black; color: white; }
-        } 
+        @context (10 < devicelight <= 30) {
+            body { background-color: black; color: white; } 
+            .code .rule {
+                color: mediumpurple;
+            }
+            .code .feat {
+                color: lightskyblue;
+            }
+            .code .value {
+                color: darkseagreen;
+            }
+            .code .stringval {
+                color: lightgray;
+            }
+            .code .selector {
+                color: #ffd966;
+            }   
+        }   
     </context-style>
     <script>
 
@@ -57,7 +92,7 @@
             inputElm = document.querySelector("#in");
             outputElm = document.querySelector('.adapt');
             inputElm.addEventListener('change',function(){
-                performContextCheck( 'devicelight', inputElm.value ); // this not supported in Firefox
+                performContextCheck( 'devicelight', parseInt(inputElm.value) ); // this not supported in Firefox
                 outputElm.innerHTML = inputElm.value;
             });
         });
@@ -86,6 +121,16 @@
         <div class="inner">
             <label for="in">device light</label>
             <input type="range" id="in" name="in" value="0">
+            <div class="code">
+                <code>
+                    <span class="rule">@context</span> (<span class="value">10</span> < <span class="feat">devicelight</span> <= <span class="value">30</span>) { <br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="selector">body</span> { <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">background-color</span>:<span class="stringval"> black</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">color</span>:<span class="stringval"> white</span>; <br>
+&nbsp;&nbsp;&nbsp;&nbsp;} <br>   
+                    }
+                </code>
+            </div>
         </div>
     </div>
 </footer>
