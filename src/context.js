@@ -299,11 +299,16 @@ function appendStyles() {
 }
 
 let features = {
-    devicelight:0,
-    devicemotion:25,
-    deviceproximity:0
+    devicelight:null,
+    devicemotion:null,
+    deviceproximity:null
 };
 
+// update de features object based on event listener
+/**   
+ * @param {string} fname
+ * @param {number} val
+ */
 function updateFeatVal(n,v) {
     Object.keys(features).forEach(function(k){
         if(k === n) {
