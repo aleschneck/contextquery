@@ -65,8 +65,8 @@
         }
 
     </style>
-    <context-style>
-        @context (10 < devicelight <= 30) {
+    <context-style context="(10 < devicelight)">
+        @context (devicelight <= 30) {
             body { background-color: black; color: white; } 
             .code .rule {
                 color: mediumpurple;
@@ -83,17 +83,21 @@
             .code .selector {
                 color: #ffd966;
             }   
-        }   
+        }
     </context-style>
     <script>
 
         let inputElm, outputElm;
         document.addEventListener('DOMContentLoaded',function(){
             inputElm = document.querySelector("#in");
+            motion = document.querySelector("#motion");
             outputElm = document.querySelector('.adapt');
             inputElm.addEventListener('change',function(){
                 performContextCheck( 'devicelight', parseInt(inputElm.value) ); // this not supported in Firefox
                 outputElm.innerHTML = inputElm.value;
+            });
+            motion.addEventListener('change',function(){
+                performContextCheck( 'devicemotion', parseInt(motion.value) );
             });
         });
 
@@ -121,6 +125,7 @@
         <div class="inner">
             <label for="in">device light</label>
             <input type="range" id="in" name="in" value="0">
+            <input type="range" id="motion" name="motion" value="0" style="display: none">
             <div class="code">
                 <code>
                     <span class="rule">@context</span> (<span class="value">10</span> < <span class="feat">devicelight</span> <= <span class="value">30</span>) { <br>

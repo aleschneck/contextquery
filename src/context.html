@@ -14,10 +14,10 @@
             this.style.display = 'none';     
         }
 
-        content() {
+        content(attrctx) {
             let inner = this.innerHTML;    
             if(inner.trim() != ''){
-                generateContextStyles( inner.trim() );
+                generateContextStyles( inner.trim(), attrctx );
             } else {
                 console.error('Context-Styles have not been declared, please use the href attribute or write them directly in the context-style tag.');
             }
@@ -25,18 +25,21 @@
         }
 
         href() {
-            let self = this;
+            let self = this, attrctx = false;
+            if(this.hasAttribute('context') && this.getAttribute('context') != "") {
+                attrctx = this.getAttribute('context').replace(/>/g, '&gt;').replace(/</g, '&lt;');
+            } 
             if(this.hasAttribute('href') && this.getAttribute('href') != "") {
                 get(this.getAttribute('href')).then(function(response) {
                     let rstr = response.replace(/>/g, '&gt;').replace(/</g, '&lt;');
-                    generateContextStyles(rstr);
-                    self.content();
+                    generateContextStyles(rstr, attrctx);
+                    self.content(attrctx);
                 }, function(error) {
                     console.error("Failed!", error);
                 })
             } else {
                 console.log('href empty or non existent');
-                self.content();
+                self.content(attrctx);
             }   
         }
      
@@ -94,19 +97,39 @@
     /**
      * @param {string} str
      */
-    function generateContextStyles(str) {
+    function generateContextStyles(str, attrctx) {
         
-        let contexts = str.split('@context');
+        let contexts = str.split('@context'), innerctx = true;
         contexts.splice(0,1);
+        if(contexts.length < 1 && attrctx ) {
+            contexts = [];
+            let andAttr = attrctx.split(','), cnt = 0;
+            for (let sar of andAttr) {
+                contexts[cnt++] = sar + '{' + str + '}}';
+            }
+            innerctx = false;
+        }
+
         for (let i of contexts) {
             
             let rules, ruleArr, lt = '&lt;', gt = '&gt;', lteq = '&lt;=', gteq = '&gt;=';
             rules = i.substring(i.indexOf("("),i.indexOf("{"));
             ruleArr = rules.split(',');
-            
+
+            if(innerctx && attrctx) {
+                let andAttr = attrctx.split(','), newRuleArr = [];
+                for (let sar of andAttr) {
+                    for (let y in ruleArr) {
+                        newRuleArr.push( ruleArr[y] + ' and ' + sar);
+                    }
+                }
+                ruleArr = newRuleArr;
+            }
+
             for (let y of ruleArr) {
                 let arr = [],  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
-                let andArr = y.split('and');         
+                let andArr = y.split('and');
+  
                 for (let j of andArr) {
                     let sr = j.substring(j.indexOf("(")+1,j.indexOf(")")), ra, prcnt = '%', obj = {}, obj2 = {}, objName, incdec = [false,false];
                     if( j.includes(lt) || j.includes(gt) ) {               
@@ -326,7 +349,8 @@
      */
     
     function performContextCheck(fname,val) {
-        updateFeatVal(fname,val);       
+        updateFeatVal(fname,val);
+        //console.log(features); 
         let len = contextRules.length;
         for (let i of contextRules) {
             len--;
@@ -336,7 +360,6 @@
                 let k = Object.keys(j)[0]; 
 
                 Object.keys(features).forEach(function(key){
-                    
                     if(key === k) {
                         v = features[key];
                         
