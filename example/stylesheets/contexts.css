@@ -1,5 +1,20 @@
-@context (max-devicelight: 40%) {
-    .adapt, label { background-color: #000; color: #fff; }
+@context (10 < devicelight <= 30) {
+    body { background-color: black; color: white; } 
+    .code .rule {
+        color: mediumpurple;
+    }
+    .code .feat {
+        color: lightskyblue;
+    }
+    .code .value {
+        color: darkseagreen;
+    }
+    .code .stringval {
+        color: lightgray;
+    }
+    .code .selector {
+        color: #ffd966;
+    }   
 }
 
 
