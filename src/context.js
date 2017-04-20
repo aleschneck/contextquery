@@ -23,21 +23,21 @@ class contextStyle extends HTMLElement {
     }
 
     href() {
-        let self = this, attrctx = false;
+        let attrctx = false;
         if(this.hasAttribute('context') && this.getAttribute('context') != "") {
             attrctx = this.getAttribute('context').replace(/>/g, '&gt;').replace(/</g, '&lt;');
         } 
         if(this.hasAttribute('href') && this.getAttribute('href') != "") {
-            get(this.getAttribute('href')).then(function(response) {
+            get(this.getAttribute('href')).then((response) => {
                 let rstr = response.replace(/>/g, '&gt;').replace(/</g, '&lt;');
                 generateContextStyles(rstr, attrctx);
-                self.content(attrctx);
-            }, function(error) {
+                this.content(attrctx);
+            }, (error) => {
                 console.error("Failed!", error);
-            })
+            });
         } else {
             console.log('href empty or non existent');
-            self.content(attrctx);
+            this.content(attrctx);
         }   
     }
     
@@ -189,9 +189,9 @@ function generateContextStyles(str, attrctx) {
                         obj[objName] = obj2;
                         if( incdec[0] || incdec[1] ) {
                             obj[objName]['lt_gt'] = incdec;
-                        } 
-                        
+                        }
                         arrOfObj.push(obj);
+                        
                     }
                 } else {                
                     let obj = {}, inner, a, incmin = 'min-', incmax = 'max-', objVal;
@@ -216,7 +216,7 @@ function generateContextStyles(str, attrctx) {
                         obj[objName] = obj2;                    
                         arrOfObj.push(obj);
                     } else {
-                            for(let i of arrOfObj) {
+                        for(let i of arrOfObj) {
                             if(Object.keys(i)[0] != objName) {
                                 if(a[0].includes(incmin)) {
                                     obj2['min'] = objVal;
@@ -352,11 +352,11 @@ function performContextCheck(fname,val) {
     let len = contextRules.length;
     for (let i of contextRules) {
         len--;
-        let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, clss = 'css-ctx-queries-' + (randomNum + len), v, b = true;
-
+        let clss = 'css-ctx-queries-' + (randomNum + len), v, b = true;
         for (let j of i[0]) {
-            let k = Object.keys(j)[0]; 
+            let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, k = Object.keys(j)[0]; 
 
+            // Compare to values stored in Features object
             Object.keys(features).forEach(function(key){
                 if(key === k) {
                     v = features[key];
@@ -375,7 +375,7 @@ function performContextCheck(fname,val) {
                             --max;
                         }
                     }
-                    if(min != -Infinity || max != Infinity) {                                      
+                    if(min != -Infinity || max != Infinity) {                                  
                         if ( v < min || max < v) {
                             b = false;
                         }         
