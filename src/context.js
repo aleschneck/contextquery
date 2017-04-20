@@ -130,6 +130,7 @@ function generateContextStyles(str, attrctx) {
 
             for (let j of andArr) {
                 let sr = j.substring(j.indexOf("(")+1,j.indexOf(")")), ra, prcnt = '%', obj = {}, obj2 = {}, objName, incdec = [false,false];
+                
                 if( j.includes(lt) || j.includes(gt) ) {               
                     if (sr.includes(lt) && sr.includes(gt)) {
                         console.error('you have mixed the greater than and less than symbol in an expression!');
@@ -193,8 +194,8 @@ function generateContextStyles(str, attrctx) {
                         arrOfObj.push(obj);
                         
                     }
-                } else {                
-                    let obj = {}, inner, a, incmin = 'min-', incmax = 'max-', objVal;
+                } else if( j.includes('min-') || j.includes('max-')) {                
+                    let inner, a, incmin = 'min-', incmax = 'max-', objVal;
                     inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));           
                     a = inner.split(':');
 
@@ -238,6 +239,10 @@ function generateContextStyles(str, attrctx) {
                             }
                         }
                     }      
+                } else {
+                    let inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));
+                    obj[inner] = { abs: 1 };
+                    arrOfObj.push(obj);
                 }
             }
 
@@ -322,9 +327,10 @@ function appendStyles() {
 }
 
 let features = {
-    devicelight:null,
-    devicemotion:null,
-    deviceproximity:null
+    devicelight: null,
+    devicemotion: null,
+    deviceproximity: null,
+    touch: null
 };
 
 // update de features object based on event listener
@@ -360,26 +366,34 @@ function performContextCheck(fname,val) {
             Object.keys(features).forEach(function(key){
                 if(key === k) {
                     v = features[key];
-                    
-                    if(j[k].hasOwnProperty('min')) {
-                        min = j[k].min;
-                    }         
-                    if(j[k].hasOwnProperty('max')) {
-                        max = j[k].max;
-                    }
-                    if(j[k].hasOwnProperty('lt_gt')) {
-                        if(j[k]['lt_gt'][0]) {
-                            ++min; 
-                        } 
-                        if(j[k]['lt_gt'][1]) {
-                            --max;
+
+                    // is it a boolean feature
+                    if(j[k].hasOwnProperty('abs')) {
+                        if(!v) {
+                            b = false;
+                        }
+                    } else {
+                        if(j[k].hasOwnProperty('min')) {
+                            min = j[k].min;
+                        }         
+                        if(j[k].hasOwnProperty('max')) {
+                            max = j[k].max;
+                        }
+                        if(j[k].hasOwnProperty('lt_gt')) {
+                            if(j[k]['lt_gt'][0]) {
+                                ++min; 
+                            } 
+                            if(j[k]['lt_gt'][1]) {
+                                --max;
+                            }
+                        }
+                        if(min != -Infinity || max != Infinity) {                                  
+                            if ( v < min || max < v) {
+                                b = false;
+                            }         
                         }
                     }
-                    if(min != -Infinity || max != Infinity) {                                  
-                        if ( v < min || max < v) {
-                            b = false;
-                        }         
-                    }
+            
                 }       
             });
                                                 
@@ -400,8 +414,7 @@ function performContextCheck(fname,val) {
     }
 }
 
-    // event listener for devicelight
-
+// event listener for devicelight
 window.addEventListener('devicelight', function(e) {      
     let normalised = e.value / 10; // normalise range from 0 to 100, max value on nexus 4 is 1000
     //console.log(normalised);
@@ -424,3 +437,6 @@ window.addEventListener('deviceproximity', function(e) {
     let normalise = ((e.value - e.min)/(e.max - e.min)) * 100;
     performContextCheck('deviceproximity',normalise);
 });
+
+// determine whether device is touch enabled on start
+performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);     
