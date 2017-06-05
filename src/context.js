@@ -273,15 +273,16 @@ function generateContextStyles(str, attrctx) {
             for (let z of singleStyles){
                 let classes, attrs, classArr; 
                 classes = z.substring(0,z.indexOf("{"));
-                attrs =  z.substring(z.indexOf("{") + 1);                             
+                attrs =  z.substring(z.indexOf("{") + 1);                            
                 classArr = classes.split(',');
                 for(let sc of classArr) {
-                    let obj = {};
-                    obj[sc.trim()] =  attrs.trim(); 
-                    arrOfClasses.push(obj);
+                    let obj = { element: sc.trim(), properties: attrs.trim() };
+                    if(obj.properties !== "") {
+                        arrOfClasses.push(obj);
+                    }
                 }
             }  
-            arr.push(arrOfObj);           
+            arr.push(arrOfObj);      
             arr.push(arrOfClasses); 
             
             contextRules.push(arr);
@@ -322,17 +323,17 @@ function get(url) {
 // Append generated styles to head tag
 function appendStyles() {
     let head = document.querySelector('head'), style = document.createElement('style'), len = contextRules.length, 
-    suffix = '.css-ctx-queries-',css = "";
+    suffix = '.css-ctx-queries-', css = "";
     style.type = 'text/css';
     style.id = 'cssCtxQueriesStyleTag';
     for(let i of contextRules) {
         len--;
         for(let styl of i[1]) {
-            let key = Object.keys(styl)[0];
+            let key = styl.element;
             if(key === 'html') {
-                css += key + suffix + (randomNum + len) + '{' + Object.values(styl)[0] + '}';
+                css += key + suffix + (randomNum + len) + '{' + styl.properties + '}';
             } else {
-                css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + Object.values(styl)[0] + '}'; // ">" selector
+                css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; // ">" selector
             }            
         }
     }
