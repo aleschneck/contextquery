@@ -208,7 +208,7 @@ function generateContextStyles(str, attrctx) {
                             obj.min = parseFloat(ra[2]);
                         }
                         if( incdec.left || incdec.right ) {
-                            obj.lt_gt = indec;
+                            obj.lt_gt = incdec;
                         }
                         arrOfObj.push(obj);
                         
