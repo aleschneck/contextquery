@@ -65,25 +65,23 @@
         }
 
     </style>
-    <context-style context="(10 < devicelight)">
-        @context (devicelight <= 30) {
-            body { background-color: black; color: white; } 
-            .code .rule {
-                color: mediumpurple;
-            }
-            .code .feat {
-                color: lightskyblue;
-            }
-            .code .value {
-                color: darkseagreen;
-            }
-            .code .stringval {
-                color: lightgray;
-            }
-            .code .selector {
-                color: #ffd966;
-            }   
+    <context-style context="(10 < devicelight <= 30)">  
+        body { background-color: black; color: white; } 
+        .code .rule {
+            color: mediumpurple;
         }
+        .code .feat {
+            color: lightskyblue;
+        }
+        .code .value {
+            color: darkseagreen;
+        }
+        .code .stringval {
+            color: lightgray;
+        }
+        .code .selector {
+            color: #ffd966;
+        }   
     </context-style>
     <script>
 
@@ -128,7 +126,7 @@
             <input type="range" id="motion" name="motion" value="0" style="display:none;">
             <div class="code">
                 <code>
-                    <span class="rule">@context</span> (<span class="value">10</span> < <span class="feat">devicelight</span> <= <span class="value">30</span>) { <br>
+                    <span class="rule">@context</span> (<span class="value">10</span> &lt; <span class="feat">devicelight</span> &lt;= <span class="value">30</span>) { <br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="selector">body</span> { <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">background-color</span>:<span class="stringval"> black</span>;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">color</span>:<span class="stringval"> white</span>; <br>
