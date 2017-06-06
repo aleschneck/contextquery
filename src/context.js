@@ -118,25 +118,24 @@ function mixedSigns(arr,symbol,indc) {
  */
 function generateContextStyles(str, attrctx) {
     
-    let contexts = str.split('@context'), innerctx = true;
+    let contexts = str.split(/\s*@context\s*/), innerctx = true, or = /\s*,\s*|\s*or\s*|\s*OR\s*/ ;
     contexts.splice(0,1);
     if(contexts.length < 1 && attrctx ) {
         contexts = [];
-        let andAttr = attrctx.split(','), cnt = 0;
+        let andAttr = attrctx.split(or), cnt = 0;
         for (let sar of andAttr) {
             contexts[cnt++] = sar + '{' + str + '}}';
         }
         innerctx = false;
     }
-
     for (let i of contexts) {
         
         let rules, ruleArr, lt = '&lt;', gt = '&gt;', lteq = '&lt;=', gteq = '&gt;=';
         rules = i.substring(i.indexOf("("),i.indexOf("{"));
-        ruleArr = rules.split(',');
+        ruleArr = rules.split(or);
 
         if(innerctx && attrctx) {
-            let andAttr = attrctx.split(','), newRuleArr = [];
+            let andAttr = attrctx.split(or), newRuleArr = [];
             for (let sar of andAttr) {
                 for (let y in ruleArr) {
                     newRuleArr.push( ruleArr[y] + ' and ' + sar);
@@ -147,7 +146,7 @@ function generateContextStyles(str, attrctx) {
 
         for (let y of ruleArr) {
             let arr = [],  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
-            let andArr = y.split('and');
+            let andArr = y.split(/\s*and\s*|\s*AND\s*/);
 
             for (let j of andArr) {
                 let sr = j.substring(j.indexOf("(")+1,j.indexOf(")")), ra, prcnt = '%', obj = {}, objName, incdec = {left:false,right:false};
@@ -216,7 +215,7 @@ function generateContextStyles(str, attrctx) {
                 } else if( j.includes('min-') || j.includes('max-')) {                
                     let inner, a, incmin = 'min-', incmax = 'max-', objVal;
                     inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));           
-                    a = inner.split(':');
+                    a = inner.split(/\s*:\s*/);
 
                     objName = a[0].trim();
                     objName = objName.replace('min-','');
@@ -267,14 +266,14 @@ function generateContextStyles(str, attrctx) {
             }
 
             styles = i.substring(i.indexOf("{") + 1,i.lastIndexOf("}"));
-            singleStyles = styles.split('}');
+            singleStyles = styles.split(/\s*}\s*/);
             singleStyles.pop();
             
             for (let z of singleStyles){
                 let classes, attrs, classArr; 
                 classes = z.substring(0,z.indexOf("{"));
                 attrs =  z.substring(z.indexOf("{") + 1);                            
-                classArr = classes.split(',');
+                classArr = classes.split(/\s*,\s*/);
                 for(let sc of classArr) {
                     let obj = { element: sc.trim(), properties: attrs.trim() };
                     if(obj.properties !== "") {
@@ -452,4 +451,4 @@ window.addEventListener('deviceproximity', function(e) {
 });
 
 // determine whether device is touch enabled on start
-performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);
+performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);    
