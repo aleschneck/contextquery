@@ -7,7 +7,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="text/javascript" src="js/webcomponents-hi-sd-ce.js"></script>
     <link rel="import" href="html/context.min.html">
-
+    <template id="foo-template">
+        <style>
+            ::slotted(p) { color: orange; }
+        </style>
+        <context-style context="(5 < devicelight < 15)">
+            p {
+                color: red;
+            }
+        </context-style>
+        <slot></slot>
+    </template>
+    <template id="foo-template-2">
+        <context-style context="(6 < devicelight < 14)">
+            p {
+                color: yellow;
+            }
+        </context-style>
+        <p>a test without slot</p>
+    </template>
     <style>
         html, body {
             position: relative;
@@ -65,8 +83,8 @@
         }
 
     </style>
-    <context-style context="(10 < devicelight)">
-        @context (devicelight <= 30) {
+    <context-style context="(10 < devicelight <=30)">
+       
             body { background-color: black; color: white; } 
             .code .rule {
                 color: mediumpurple;
@@ -83,7 +101,7 @@
             .code .selector {
                 color: #ffd966;
             }   
-        }
+        
     </context-style>
     <script>
 
@@ -105,6 +123,20 @@
         window.addEventListener('HTMLImportsLoaded', function(e) {
             //console.log('HTML Imports Loaded');
         });
+
+        class fooElm extends HTMLElement {
+            constructor() {
+                super();            
+            }
+            connectedCallback() {
+                let shadowRoot = this.attachShadow({mode: 'open'});
+                const t = document.querySelector(this.getAttribute('tpl'));
+                const instance = t.content.cloneNode(true);
+                shadowRoot.appendChild(instance);
+            }
+        }
+
+        customElements.define('foo-elm', fooElm);
 
     </script>
 
@@ -139,5 +171,9 @@
         </div>
     </div>
 </footer>
+<foo-elm tpl="#foo-template">
+    <p>I'm in Shadow DOM. My markup was stamped from a &lt;template&gt;.</p>
+</foo-elm>
+<foo-elm tpl="#foo-template-2"></foo-elm>
 </body>
 </html>

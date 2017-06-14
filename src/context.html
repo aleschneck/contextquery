@@ -32,6 +32,7 @@
         }
 
         connectedCallback() {
+            if(this.parentNode.host != undefined) { root = this.parentNode.host } 
             this.href();
             this.style.display = 'none';     
         }
@@ -146,7 +147,7 @@
             }
 
             for (let y of ruleArr) {
-                let arr = [],  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
+                let contextRuleObj = { root: root, contexts: [],sheets: []},  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
                 let andArr = y.split(/\s*and\s*/i);
 
                 for (let j of andArr) {
@@ -281,11 +282,16 @@
                             arrOfClasses.push(obj);
                         }
                     }
-                }  
+                }
+                /*
+                arr.push({root: root});
                 arr.push(arrOfObj);      
-                arr.push(arrOfClasses); 
-                
-                contextRules.push(arr);
+                arr.push(arrOfClasses);
+                */
+                contextRuleObj.contexts = arrOfObj;
+                contextRuleObj.sheets = arrOfClasses;
+
+                contextRules.push(contextRuleObj);
             }
 
         }
@@ -328,21 +334,40 @@
         style.id = 'cssCtxQueriesStyleTag';
         for(let i of contextRules) {
             len--;
-            for(let styl of i[1]) {
-                let key = styl.element;
-                if(key === 'html') {
-                    css += key + suffix + (randomNum + len) + '{' + styl.properties + '}';
+            for(let styl of i.sheets) {    
+                let key = styl.element;      
+                if(i.root.shadowRoot) {
+                    if(i.root.shadowRoot.querySelector('slot')) {
+                        css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}';
+                    } else {
+                        css += ':host(' + suffix + (randomNum + len) + ') ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; 
+                    }
                 } else {
-                    css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; // ">" selector
-                }            
-            }
+                    if(key === 'html') {
+                        css += key + suffix + (randomNum + len) + '{' + styl.properties + '}';
+                    } else {
+                        css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; // ">" selector
+                    }
+                }                          
+            }           
         }
-        if(document.getElementById('cssCtxQueriesStyleTag')) {
-            document.getElementById('cssCtxQueriesStyleTag').innerHTML = "";
-            document.getElementById('cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
+
+        if(head.querySelector('#cssCtxQueriesStyleTag')) {
+            head.querySelector('#cssCtxQueriesStyleTag').innerHTML = "";
+            head.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
         } else {
             style.appendChild(document.createTextNode(css));
             head.appendChild(style);
+        }
+        
+        if(root.shadowRoot) {
+            if(root.shadowRoot.querySelector('#cssCtxQueriesStyleTag')) {
+                root.shadowRoot.querySelector('#cssCtxQueriesStyleTag').innerHTML = "";
+                root.shadowRoot.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
+            } else {
+                style.appendChild(document.createTextNode(css));
+                root.shadowRoot.appendChild(style);
+            }
         }
     }
 
@@ -373,7 +398,7 @@
         for (let i of contextRules) {
             len--;
             let clss = 'css-ctx-queries-' + (randomNum + len), b = true;
-            for (let j of i[0]) {
+            for (let j of i.contexts) {
                 let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
 
                 // Compare to values stored in Features object
@@ -413,14 +438,14 @@
             }
             
             if( b ) {
-                if(!root.classList.contains(clss)){
+                if(!i.root.classList.contains(clss)){
                     //console.log('class added ' + clss + ' within min:' + min + ' max:' + max);
-                    root.classList.add(clss);
+                    i.root.classList.add(clss);
                 }       
             } else  {
-                if(root.classList.contains(clss)) {
+                if(i.root.classList.contains(clss)) {
                     //console.log('class removed ' + clss + ' within min:' + min + ' max:' + max);
-                    root.classList.remove(clss);
+                    i.root.classList.remove(clss);
                 }             
             }      
         
