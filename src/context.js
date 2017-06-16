@@ -118,7 +118,7 @@ function mixedSigns(arr,symbol,indc) {
  */
 function generateContextStyles(str, attrctx) {
     
-    let contexts = str.split(/\s*@context\s*/), innerctx = true, or = /\s*,\s*|\s*or\s*|\s*OR\s*/ ;
+    let contexts = str.split(/\s*@context\s*/), innerctx = true, or = /\s*,\s*|\s*or\s*/i ;
     contexts.splice(0,1);
     if(contexts.length < 1 && attrctx ) {
         contexts = [];
@@ -146,7 +146,7 @@ function generateContextStyles(str, attrctx) {
 
         for (let y of ruleArr) {
             let arr = [],  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
-            let andArr = y.split(/\s*and\s*|\s*AND\s*/);
+            let andArr = y.split(/\s*and\s*/i);
 
             for (let j of andArr) {
                 let sr = j.substring(j.indexOf("(")+1,j.indexOf(")")), ra, prcnt = '%', obj = {}, objName, incdec = {left:false,right:false};
@@ -451,4 +451,4 @@ window.addEventListener('deviceproximity', function(e) {
 });
 
 // determine whether device is touch enabled on start
-performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);    
+performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);
