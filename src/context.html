@@ -10,7 +10,7 @@
     (function () {
         for(feature of features) {
             if(feature.callback == null) {
-                if(feature.name in window) {
+                if('on' + feature.name in window) {
                     feature.supported = true;
                 } else {
                     feature.supported = false;
@@ -119,8 +119,9 @@
      */
     function generateContextStyles(str, attrctx) {
         
-        let contexts = str.split(/\s*@context\s*/), innerctx = true, or = /\s*,\s*|\s*or\s*/i ;
+        let contexts = str.split(/\s*@context\s*/), innerctx = true, or = /\s*,\s*|\s*or\s*/i;
         contexts.splice(0,1);
+        console.log(contexts);
         if(contexts.length < 1 && attrctx ) {
             contexts = [];
             let andAttr = attrctx.split(or), cnt = 0;
@@ -146,7 +147,7 @@
             }
 
             for (let y of ruleArr) {
-                let arr = [],  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
+                let contextRuleObj = { contexts: [],sheets: []},  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
                 let andArr = y.split(/\s*and\s*/i);
 
                 for (let j of andArr) {
@@ -213,55 +214,60 @@
                             arrOfObj.push(obj);
                             
                         }
-                    } else if( j.includes('min-') || j.includes('max-')) {                
-                        let inner, a, incmin = 'min-', incmax = 'max-', objVal;
+                    } else if( j.includes(':')) {                
+                        let inner, a, objVal;
                         inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));           
                         a = inner.split(/\s*:\s*/);
 
                         objName = a[0].trim();
-                        objName = objName.replace('min-','');
-                        objName = objName.replace('max-','');
 
                         obj.feature = objName;
                         objVal = parseFloat(a[1]);
                         
-                            
-                        if(arrOfObj.length == 0) {
-                            if(a[0].includes(incmin)) {
-                                obj.min = objVal;
-                            }
-
-                            if(a[0].includes(incmax)) {
-                                obj.max = objVal;
-                            }                  
-                            arrOfObj.push(obj);
-                        } else {
-                            for(let i of arrOfObj) {
-                                if(i.feature != obj.feature) {
-                        
-                                    if(a[0].includes(incmin)) {
-                                        obj.min = objVal;
-                                    }
-
-                                    if(a[0].includes(incmax)) {
-                                        obj.max = objVal;
-                                    }
-                                    arrOfObj.push(obj);
-                                } else {
-                                    if(a[0].includes(incmin)) {
-                                        i.min = objVal;
-                                    }
-
-                                    if(a[0].includes(incmax)) {
-                                        i.max = objVal;
-                                    } 
+                        if( objName.includes('min-') || objName.includes('max-')) {
+                            objName = objName.replace('min-','');
+                            objName = objName.replace('max-','');
+                            obj.feature = objName;
+                            if(arrOfObj.length == 0) {
+                                if(a[0].includes('min-')) {
+                                    obj.min = objVal;
                                 }
-                            }
-                        }      
+
+                                if(a[0].includes('max-')) {
+                                    obj.max = objVal;
+                                }                  
+                                arrOfObj.push(obj);
+                            } else {
+                                for(let i of arrOfObj) {
+                                    if(i.feature != obj.feature) {
+                            
+                                        if(a[0].includes('min-')) {
+                                            obj.min = objVal;
+                                        }
+
+                                        if(a[0].includes('max-')) {
+                                            obj.max = objVal;
+                                        }
+                                        arrOfObj.push(obj);
+                                    } else {
+                                        if(a[0].includes('min-')) {
+                                            i.min = objVal;
+                                        }
+
+                                        if(a[0].includes('max-')) {
+                                            i.max = objVal;
+                                        } 
+                                    }
+                                }
+                            } 
+                        } else {
+                            obj.abs = objVal;
+                            arrOfObj.push(obj);
+                        }
                     } else {
                         let inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));
                         obj.feature = inner;
-                        obj.abs = 1;
+                        obj.abs = true;
                         arrOfObj.push(obj);
                     }
                 }
@@ -282,10 +288,9 @@
                         }
                     }
                 }  
-                arr.push(arrOfObj);      
-                arr.push(arrOfClasses); 
-                
-                contextRules.push(arr);
+                contextRuleObj.contexts = arrOfObj;
+                contextRuleObj.sheets = arrOfClasses;
+                contextRules.push(contextRuleObj);
             }
 
         }
@@ -328,7 +333,7 @@
         style.id = 'cssCtxQueriesStyleTag';
         for(let i of contextRules) {
             len--;
-            for(let styl of i[1]) {
+            for(let styl of i.sheets) {
                 let key = styl.element;
                 if(key === 'html') {
                     css += key + suffix + (randomNum + len) + '{' + styl.properties + '}';
@@ -373,43 +378,51 @@
         for (let i of contextRules) {
             len--;
             let clss = 'css-ctx-queries-' + (randomNum + len), b = true;
-            for (let j of i[0]) {
+            for (let j of i.contexts) {
                 let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
 
-                // Compare to values stored in Features object
                 for(let feature of features ){
                     if(feature.name === j.feature) {
-
-                        // is it a boolean feature
-                        if(j.hasOwnProperty('abs')) {
-                            if(!feature.value) {
-                                b = false;
-                            }
-                        } else {
-                            if(j.hasOwnProperty('min')) {
-                                min = j.min;
-                            }         
-                            if(j.hasOwnProperty('max')) {
-                                max = j.max;
-                            }
-                            if(j.hasOwnProperty('lt_gt')) {
-                                if(j.lt_gt.left) {
-                                    ++min;
-                                } 
-                                if(j.lt_gt.right) {
-                                    --max;
+                        // Compare to values stored in Features object
+                        if(feature.supported) {
+                            // has an unique value either numeric or boolean
+                            if(j.hasOwnProperty('abs')) {
+                                if(Number.isInteger(j.abs)) {
+                                    if(feature.value != j.abs) {
+                                        b = false;
+                                    }
+                                } else {
+                                    if(!feature.value) {
+                                        b = false;
+                                    }
+                                }
+                            } else {
+                                // Value is in range
+                                if(j.hasOwnProperty('min')) {
+                                    min = j.min;
+                                }         
+                                if(j.hasOwnProperty('max')) {
+                                    max = j.max;
+                                }
+                                if(j.hasOwnProperty('lt_gt')) {
+                                    if(j.lt_gt.left) {
+                                        ++min;
+                                    } 
+                                    if(j.lt_gt.right) {
+                                        --max;
+                                    }
+                                }
+                                if(min != -Infinity || max != Infinity) {                                  
+                                    if ( feature.value < min || max < feature.value) {
+                                        b = false;
+                                    }         
                                 }
                             }
-                            if(min != -Infinity || max != Infinity) {                                  
-                                if ( feature.value < min || max < feature.value) {
-                                    b = false;
-                                }         
-                            }
+                        } else {
+                            b = false;
                         }
-                
-                    }       
-                }
-                                                    
+                    }  
+                }                                                   
             }
             
             if( b ) {

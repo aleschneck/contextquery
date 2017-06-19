@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="text/javascript" src="js/webcomponents-hi-sd-ce.js"></script>
     <link rel="import" href="html/context.min.html">
+    <link rel="stylesheet" media="(max-width: 360px)" type="text/css" href="stylesheets/queries.css" />
 
     <style>
         html, body {
@@ -63,10 +64,9 @@
         .code .selector {
             color: darkred;
         }
-
     </style>
-    <context-style context="(10 < devicelight <= 30)">  
-        body { background-color: black; color: white; } 
+    <context-style context="(10 < devicelight <= 30)">
+        body { background-color: black; color: white; }
         .code .rule {
             color: mediumpurple;
         }
@@ -81,7 +81,7 @@
         }
         .code .selector {
             color: #ffd966;
-        }   
+        }
     </context-style>
     <script>
 
@@ -123,7 +123,7 @@
         <div class="inner">
             <label for="in">device light</label>
             <input type="range" id="in" name="in" value="0">
-            <input type="range" id="motion" name="motion" value="0" style="display:none;">
+            <input type="range" id="motion" name="motion" value="0" style="display: none;">
             <div class="code">
                 <code>
                     <span class="rule">@context</span> (<span class="value">10</span> &lt; <span class="feat">devicelight</span> &lt;= <span class="value">30</span>) { <br>
