@@ -295,9 +295,7 @@ function get(url) {
 }
 // Append generated styles to head tag
 function appendStyles() {
-    let head = document.querySelector('head'), style = document.createElement('style'),
-    suffix = '.css-ctx-queries-', css = "";
-    style.type = 'text/css';
+    let head = document.querySelector('head'), style = document.createElement('style'), suffix = '.css-ctx-queries-', css = "";
     style.id = 'cssCtxQueriesStyleTag';
     for(let i of contextRules) {
         for(let styl of i.sheets) {
