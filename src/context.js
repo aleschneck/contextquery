@@ -304,7 +304,7 @@ function appendStyles() {
         for(let styl of i.sheets) {
             let key = styl.element;
             if(i.root.shadowRoot) {
-                if(!i.root.shadowRoot.querySelector('slot')) {
+                if(!i.root.shadowRoot.contains('slot')) {
                     scss += ':host(' + suffix + (randomNum + len) + ') ' + key.replace('&gt;','>') + '{' + styl.properties + '}';
                 } else {
                     css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; 
@@ -446,4 +446,4 @@ window.addEventListener('deviceproximity', function(e) {
     performContextCheck('deviceproximity',normalise);
 });
 // determine whether device is touch enabled on start
-performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);  
+performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);

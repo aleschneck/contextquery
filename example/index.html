@@ -18,7 +18,9 @@
                 color: red;
             }
         </context-style>
-        <slot></slot>
+        <div>
+            <slot id="slt" name="par"></slot>
+        </div>
     </template>
     <template id="foo-template-2">
         <style>
@@ -29,7 +31,7 @@
                 color: yellow;
             }
         </context-style>
-        <p>a test without slot</p>
+        <p>I'm entirely in Shadow DOM. My markup was stamped from a &lt;template&gt; </p>
     </template>
     <style>
         html, body {
@@ -86,6 +88,10 @@
         .code .selector {
             color: darkred;
         }
+
+        foo-elm {
+            display: block;
+        }
     </style>
     <context-style context="(10 < devicelight <= 30)">
         body { background-color: black; color: white; }
@@ -104,6 +110,9 @@
         .code .selector {
             color: #ffd966;
         }
+        foo-elm {
+            background-color: #ccc;
+        }   
     </context-style>
     <script>
 
@@ -170,12 +179,13 @@
                     }
                 </code>
             </div>
+            <foo-elm tpl="#foo-template">
+                <p slot="par">I'm in Shadow DOM. My markup was stamped from a &lt;template&gt;, I'm using the &t;slot&gt; element.</p>
+            </foo-elm>
+            <foo-elm tpl="#foo-template-2"></foo-elm>
         </div>
     </div>
 </footer>
-<foo-elm tpl="#foo-template">
-    <p>I'm in Shadow DOM. My markup was stamped from a &lt;template&gt;.</p>
-</foo-elm>
-<foo-elm tpl="#foo-template-2"></foo-elm>
+
 </body>
 </html>
