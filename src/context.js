@@ -295,51 +295,41 @@ function get(url) {
 }
 // Append generated styles to head tag
 function appendStyles() {
-    let head = document.querySelector('head'), style = document.createElement('style'), len = contextRules.length, 
-    suffix = '.css-ctx-queries-', css = "", scss = "";
+    let head = document.querySelector('head'), style = document.createElement('style'),
+    suffix = '.css-ctx-queries-', css = "";
     style.type = 'text/css';
     style.id = 'cssCtxQueriesStyleTag';
     for(let i of contextRules) {
-        len--;
         for(let styl of i.sheets) {
             let key = styl.element;
-            if(i.root.shadowRoot) {
-                if(!i.root.shadowRoot.contains('slot')) {
-                    scss += ':host(' + suffix + (randomNum + len) + ') ' + key.replace('&gt;','>') + '{' + styl.properties + '}';
+            if(i.root == root) {
+                if(i.root.shadowRoot) {
+                    if(!i.root.shadowRoot.querySelector('slot')) {
+                        css += ':host(' + suffix + (randomNum + contextRules.indexOf(i)) + ') ' + key.replace('&gt;','>') + '{' + styl.properties + '}';
+                    } else {
+                        css +=  suffix + (randomNum + contextRules.indexOf(i)) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; 
+                    }
                 } else {
-                    css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; 
+                    if(key === 'html') {
+                        css += key + suffix + (randomNum + contextRules.indexOf(i)) + '{' + styl.properties + '}';
+                    } else {
+                        css +=  suffix + (randomNum + contextRules.indexOf(i)) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; // ">" selector
+                    }
                 }
-            } else {
-                if(key === 'html') {
-                    css += key + suffix + (randomNum + len) + '{' + styl.properties + '}';
-                } else {
-                    css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; // ">" selector
-                }
-            }           
+            }          
+        }
+    }
+    if(root.shadowRoot) {
+        if(!root.shadowRoot.querySelector('slot')) {
+            head = root.shadowRoot;
         }
     }
     if(head.querySelector('#cssCtxQueriesStyleTag')) {
-        head.querySelector('#cssCtxQueriesStyleTag').innerHTML = "";
         head.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
     } else {
         style.appendChild(document.createTextNode(css));
         head.appendChild(style);
-    }
-    
-    if(root.shadowRoot) {
-        if(!root.shadowRoot.querySelector('slot')) {
-            if(root.shadowRoot.querySelector('#cssCtxQueriesStyleTag')) {
-                root.shadowRoot.querySelector('#cssCtxQueriesStyleTag').innerHTML = "";
-                root.shadowRoot.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
-            } else {
-                var stl = document.createElement('style');
-                stl.type = 'text/css';
-                stl.id = 'cssCtxQueriesStyleTag';
-                stl.appendChild(document.createTextNode(scss));
-                root.shadowRoot.appendChild(stl);
-            }
-        }
-    }
+    }   
 }
 // update features object based on event listener
 /**   
@@ -360,10 +350,10 @@ function updateFeatVal(n,v) {
  */
 function performContextCheck(fname,val) {
     updateFeatVal(fname,val);
-    let len = contextRules.length;
+    //let len = contextRules.length;
     for (let i of contextRules) {
-        len--;
-        let clss = 'css-ctx-queries-' + (randomNum + len), b = true;
+        //len--;
+        let clss = 'css-ctx-queries-' + (randomNum + contextRules.indexOf(i)), b = true;
         for (let j of i.contexts) {
             let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
             for(let feature of features ){

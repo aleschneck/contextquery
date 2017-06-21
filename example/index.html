@@ -94,7 +94,7 @@
         }
     </style>
     <context-style context="(10 < devicelight <= 30)">
-        body { background-color: black; color: white; }
+        body { background-color: black; color: white; }  
         .code .rule {
             color: mediumpurple;
         }
@@ -112,7 +112,7 @@
         }
         foo-elm {
             background-color: #ccc;
-        }   
+        }     
     </context-style>
     <script>
 
@@ -180,7 +180,7 @@
                 </code>
             </div>
             <foo-elm tpl="#foo-template">
-                <p slot="par">I'm in Shadow DOM. My markup was stamped from a &lt;template&gt;, I'm using the &t;slot&gt; element.</p>
+                <p slot="par">I'm in Shadow DOM. My markup was stamped from a &lt;template&gt;, I'm using the &lt;slot&gt; element.</p>
             </foo-elm>
             <foo-elm tpl="#foo-template-2"></foo-elm>
         </div>
