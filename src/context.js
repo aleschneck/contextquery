@@ -5,7 +5,6 @@ let features = [
     { name: 'deviceproximity', value: null, callback: null },
     { name: 'touch', value: null, callback: function() { return ('ontouchstart' in window || navigator.maxTouchPoints)?true:false } }
 ];
-
 (function () {
     for(feature of features) {
         if(feature.callback == null) {
@@ -20,21 +19,17 @@ let features = [
     }
     console.log(features);
 })();
-
 const randomNum = Math.floor(Math.random() * (900 - 701 +1)) + 701;
-
 let root = document.querySelector("html"), contextRules = [];
-
 class contextStyle extends HTMLElement {
     constructor() {
         super(); 
     }
-
     connectedCallback() {
+        if(this.parentNode.host != undefined) { root = this.parentNode.host } 
         this.href();
         this.style.display = 'none';     
     }
-
     content(attrctx) {
         let inner = this.innerHTML;    
         if(inner.trim() != ''){
@@ -44,7 +39,6 @@ class contextStyle extends HTMLElement {
         }
                 
     }
-
     href() {
         let attrctx = false;
         if(this.hasAttribute('context') && this.getAttribute('context') != "") {
@@ -65,9 +59,7 @@ class contextStyle extends HTMLElement {
     }
     
 }
-
 customElements.define('context-style', contextStyle);
-
 /**
  * @param {array} arr
  * @param {string} symbol
@@ -86,7 +78,6 @@ function mixedSigns(arr,symbol,indc) {
                 } 
             }
         }
-
         // if tmpStr has been assigned value
         if(tmpStr != undefined) {
             tmpArr = tmpStr.split(symbol);
@@ -112,7 +103,6 @@ function mixedSigns(arr,symbol,indc) {
         //console.log(arr);
     }
 }
-
 /**
  * @param {string} str
  */
@@ -124,7 +114,6 @@ function generateContextStyles(str, attrctx) {
             let rules = i.substring(i.indexOf("("),i.indexOf("{")), ruleArr, lt = '&lt;', gt = '&gt;', lteq = '&lt;=', gteq = '&gt;=';
             if(rules.includes('(') && rules.includes(')')){
                 ruleArr = rules.split(or);
-
                 if(attrctx) {
                     let andAttr = attrctx.split(or), newRuleArr = [];
                     for (let sar of andAttr) {
@@ -138,11 +127,9 @@ function generateContextStyles(str, attrctx) {
                 ruleArr = attrctx.split(or);
             }
             
-
             for (let y of ruleArr) {
-                let contextRuleObj = { contexts: [],sheets: []},  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
+                let contextRuleObj = { root: root, contexts: [],sheets: []},  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
                 let andArr = y.split(/\s*and\s*/i);
-
                 for (let j of andArr) {
                     let sr = j.substring(j.indexOf("(")+1,j.indexOf(")")), ra, prcnt = '%', obj = {}, objName, incdec = {left:false,right:false};
                     if( j.includes(lt) || j.includes(gt) ) {               
@@ -177,7 +164,6 @@ function generateContextStyles(str, attrctx) {
                                 obj.lt_gt = incdec;
                             }
                             arrOfObj.push(obj);
-
                         }
                         if (sr.includes(gt)) {
                             if (sr.includes(gteq)) {
@@ -211,9 +197,7 @@ function generateContextStyles(str, attrctx) {
                         let inner, a, objVal;
                         inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));           
                         a = inner.split(/\s*:\s*/);
-
                         objName = a[0].trim();
-
                         obj.feature = objName;
                         objVal = parseFloat(a[1]);
                         
@@ -225,7 +209,6 @@ function generateContextStyles(str, attrctx) {
                                 if(a[0].includes('min-')) {
                                     obj.min = objVal;
                                 }
-
                                 if(a[0].includes('max-')) {
                                     obj.max = objVal;
                                 }                  
@@ -237,7 +220,6 @@ function generateContextStyles(str, attrctx) {
                                         if(a[0].includes('min-')) {
                                             obj.min = objVal;
                                         }
-
                                         if(a[0].includes('max-')) {
                                             obj.max = objVal;
                                         }
@@ -246,7 +228,6 @@ function generateContextStyles(str, attrctx) {
                                         if(a[0].includes('min-')) {
                                             i.min = objVal;
                                         }
-
                                         if(a[0].includes('max-')) {
                                             i.max = objVal;
                                         } 
@@ -266,7 +247,6 @@ function generateContextStyles(str, attrctx) {
                         }  
                     }
                 }
-
                 styles = (rules.includes('(') && rules.includes(')'))?i.substring(i.indexOf("{") + 1,i.lastIndexOf("}")):i;
                 singleStyles = styles.split(/\s*}\s*/);
                 for (let z of singleStyles){
@@ -288,12 +268,10 @@ function generateContextStyles(str, attrctx) {
             }
         }
     }
-
     appendStyles(contextRules);      
     // Show array on the console
     console.log(contextRules);  
 }
-
 /**   
  * @param {string} url
  */
@@ -301,7 +279,6 @@ function get(url) {
     return new Promise(function(resolve, reject) {
         var req = new XMLHttpRequest();
         req.open('GET', url);
-
         req.onload = function() {
             if (req.status == 200) {
                 resolve(req.response);
@@ -310,48 +287,65 @@ function get(url) {
                 reject(Error(req.statusText));
             }
         };
-
         req.onerror = function() {
             reject(Error("Network Error"));
         };
-
         req.send();
     });
 }
-
 // Append generated styles to head tag
 function appendStyles() {
     let head = document.querySelector('head'), style = document.createElement('style'), len = contextRules.length, 
-    suffix = '.css-ctx-queries-', css = "";
+    suffix = '.css-ctx-queries-', css = "", scss = "";
     style.type = 'text/css';
     style.id = 'cssCtxQueriesStyleTag';
     for(let i of contextRules) {
         len--;
         for(let styl of i.sheets) {
             let key = styl.element;
-            if(key === 'html') {
-                css += key + suffix + (randomNum + len) + '{' + styl.properties + '}';
+            if(i.root.shadowRoot) {
+                if(!i.root.shadowRoot.querySelector('slot')) {
+                    scss += ':host(' + suffix + (randomNum + len) + ') ' + key.replace('&gt;','>') + '{' + styl.properties + '}';
+                } else {
+                    css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; 
+                }
             } else {
-                css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; // ">" selector
-            }            
+                if(key === 'html') {
+                    css += key + suffix + (randomNum + len) + '{' + styl.properties + '}';
+                } else {
+                    css +=  suffix + (randomNum + len) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; // ">" selector
+                }
+            }           
         }
     }
-    if(document.getElementById('cssCtxQueriesStyleTag')) {
-        document.getElementById('cssCtxQueriesStyleTag').innerHTML = "";
-        document.getElementById('cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
+    if(head.querySelector('#cssCtxQueriesStyleTag')) {
+        head.querySelector('#cssCtxQueriesStyleTag').innerHTML = "";
+        head.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
     } else {
         style.appendChild(document.createTextNode(css));
         head.appendChild(style);
     }
+    
+    if(root.shadowRoot) {
+        if(!root.shadowRoot.querySelector('slot')) {
+            if(root.shadowRoot.querySelector('#cssCtxQueriesStyleTag')) {
+                root.shadowRoot.querySelector('#cssCtxQueriesStyleTag').innerHTML = "";
+                root.shadowRoot.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
+            } else {
+                var stl = document.createElement('style');
+                stl.type = 'text/css';
+                stl.id = 'cssCtxQueriesStyleTag';
+                stl.appendChild(document.createTextNode(scss));
+                root.shadowRoot.appendChild(stl);
+            }
+        }
+    }
 }
-
-
 // update features object based on event listener
 /**   
  * @param {string} n
  * @param {number} v
  */
-
 function updateFeatVal(n,v) {
     for(let i of features) {
         if(i.name == n) {
@@ -359,13 +353,11 @@ function updateFeatVal(n,v) {
         }
     }
 }
-
-// Add and remove the classes on the html tag
+// Add and remove the classes on the root element
 /**   
  * @param {string} fname
  * @param {number} val
  */
-
 function performContextCheck(fname,val) {
     updateFeatVal(fname,val);
     let len = contextRules.length;
@@ -374,7 +366,6 @@ function performContextCheck(fname,val) {
         let clss = 'css-ctx-queries-' + (randomNum + len), b = true;
         for (let j of i.contexts) {
             let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
-
             for(let feature of features ){
                 if(feature.name === j.feature) {
                     // Compare to values stored in Features object
@@ -420,27 +411,25 @@ function performContextCheck(fname,val) {
         }
         
         if( b ) {
-            if(!root.classList.contains(clss)){
+            if(!i.root.classList.contains(clss)){
                 //console.log('class added ' + clss + ' within min:' + min + ' max:' + max);
-                root.classList.add(clss);
+                i.root.classList.add(clss);
             }       
         } else  {
-            if(root.classList.contains(clss)) {
+            if(i.root.classList.contains(clss)) {
                 //console.log('class removed ' + clss + ' within min:' + min + ' max:' + max);
-                root.classList.remove(clss);
+                i.root.classList.remove(clss);
             }             
         }      
     
     }
 }
-
 // event listener for devicelight
 window.addEventListener('devicelight', function(e) {      
     let normalised = e.value / 10; // normalise range from 0 to 100, max value on nexus 4 is 1000
     //console.log(normalised);
     performContextCheck('devicelight',Math.round(normalised));
 });
-
 // event listener for devicemotion
 let acceleration = 0;
 window.addEventListener('devicemotion', function(e) {
@@ -451,12 +440,10 @@ window.addEventListener('devicemotion', function(e) {
         performContextCheck('devicemotion', accel);
     }
 });
-
 // event listener for devicemotion
 window.addEventListener('deviceproximity', function(e) {
     let normalise = ((e.value - e.min)/(e.max - e.min)) * 100;
     performContextCheck('deviceproximity',normalise);
 });
-
 // determine whether device is touch enabled on start
 performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);  
