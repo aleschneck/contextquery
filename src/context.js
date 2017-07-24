@@ -3,7 +3,8 @@ let features = [
     { name: 'devicelight', value: null, callback: null },
     { name: 'devicemotion', value: null, callback: null },
     { name: 'deviceproximity', value: null, callback: null },
-    { name: 'touch', value: null, callback: function() { return ('ontouchstart' in window || navigator.maxTouchPoints)?true:false } }
+    { name: 'touch', value: null, callback: function() { return ('ontouchstart' in window || navigator.maxTouchPoints)?true:false } },
+    { name: 'time', value: null, callback: function() { return true }}
 ];
 (function () {
     for(feature of features) {
@@ -435,3 +436,12 @@ window.addEventListener('deviceproximity', function(e) {
 });
 // determine whether device is touch enabled on start
 performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);
+
+let date = new Date(), min = date.getMinutes(); 
+const interval = 30000;
+
+performContextCheck('time',(date.getHours() * 60) +  date.getMinutes());
+setInterval(function(){
+    let d = new Date(), hours = d.getHours(), minutes = d.getMinutes(), totalminutes = (hours * 60) + minutes;
+    performContextCheck('time',totalminutes);
+},interval);
