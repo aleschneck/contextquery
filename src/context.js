@@ -437,7 +437,7 @@ window.addEventListener('deviceproximity', function(e) {
 // determine whether device is touch enabled on start
 performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);
 
-let date = new Date(), min = date.getMinutes(); 
+let date = new Date(); 
 const interval = 30000;
 
 performContextCheck('time',(date.getHours() * 60) +  date.getMinutes());
