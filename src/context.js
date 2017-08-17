@@ -4,7 +4,8 @@ let features = [
     { name: 'devicemotion', value: null, callback: null },
     { name: 'deviceproximity', value: null, callback: null },
     { name: 'touch', value: null, callback: function() { return ('ontouchstart' in window || navigator.maxTouchPoints)?true:false } },
-    { name: 'time', value: null, callback: function() { return true }}
+    { name: 'time', value: null, callback: function() { return true }},
+    { name: 'battery', value: null, callback: function() { return true }}
 ];
 (function () {
     for(feature of features) {
@@ -20,21 +21,300 @@ let features = [
     }
     console.log(features);
 })();
-const randomNum = Math.floor(Math.random() * (900 - 701 +1)) + 701;
-let root = document.querySelector("html"), contextRules = [];
+
+
+        
+let counter = 0; // instantiated ContextQueryList objects
+let contextQueryObjectsList = [];
+
+let changeEvent = new CustomEvent("change"); 
+
+class ContextQueryList {
+    constructor(query, host) {
+        this.context = query;
+        this.onchange = null;
+        this._private = { listeners: {}, host: host, queries: this.breakQueriesDown() };
+        this.matches = this.determineMatch();
+    }
+
+    addEventListener(type, callback) {
+        if (!(type in this._private.listeners)) {
+            this._private.listeners[type] = [];
+        }
+        this._private.listeners[type].push(callback);
+    };
+
+    addlistener(callback) {
+        this.addEventListener("change", callback);
+    }
+
+    removeEventListener(type, callback) {
+        if (!(type in this._private.listeners)) {
+            return;
+        }
+        let stack = this._private.listeners[type];
+
+        for (let i in stack) {
+            console.log(stack[i]);  
+            if (stack[i].toString() === callback.toString()){
+                stack.splice(i, 1);
+                return;
+            }
+        }
+    };
+
+    removeListener(callback) {
+        this.removeEventListener("change", callback)
+    }
+
+    dispatchEvent(event) {
+        if (!(event.type in this._private.listeners)) {
+            return true;
+        }
+        let stack = this._private.listeners[event.type];
+
+        //event.target = this;
+        for (let elm of stack) {
+            elm.call(this, event);
+        }
+        return !event.defaultPrevented;
+    };
+
+    set onchange(callback) {    
+        if(typeof callback == "function") {
+            this.removeEventListener("change", this.onchange);
+            onchange = callback;
+            this.addEventListener("change", callback);
+        } 
+    } 
+
+    get onchange() {
+        return onchange;
+    }
+
+    breakQueriesDown() {
+        let arrayOfContexts = [], or = /\s*,\s*|\s*or\s*/i, orArr = this.context.split(or), lt = '<', gt = '>', lteq = '<=', gteq = '>=';
+        for (let y of orArr) {
+            let contextRuleObj = { contexts: [] },  arrOfObj = [];
+            let andArr = y.split(/\s*and\s*/i);
+            for (let j of andArr) {
+                let sr = j.substring(j.indexOf("(")+1,j.indexOf(")")), ra, prcnt = '%', obj = {}, objName, incdec = {left:false,right:false};
+                if( j.includes(lt) || j.includes(gt) ) {               
+                    if (sr.includes(lt) && sr.includes(gt)) {
+                        console.error('you have mixed the greater than and less than symbol in an expression!');
+                        return;
+                    }
+                
+                    if (sr.includes(lt)) {
+                        if (sr.includes(lteq)) {
+                            ra = sr.split(lteq);
+                            mixedSigns(ra,lt,incdec);
+                        } else {
+                            ra = sr.split(lt);
+                            incdec = {left:true,right:true};   	
+                        }  
+                        if(ra.length == 2) {
+                            if(ra[0].includes(prcnt) || !isNaN(ra[0])) {
+                                obj.min = parseFloat(ra[0]); 
+                                obj.feature = ra[1].trim();
+                            } else {
+                                obj.max = parseFloat(ra[1]); 
+                                obj.feature = ra[0].trim();                                
+                            }
+                        } else {
+                            obj.feature = ra[1].trim();
+                            obj.min = parseFloat(ra[0]);
+                            obj.max = parseFloat(ra[2]);
+                        }
+                        
+                        if( incdec.left || incdec.right ) {
+                            obj.lt_gt = incdec;
+                        }
+                        arrOfObj.push(obj);
+                    }
+                    if (sr.includes(gt)) {
+                        if (sr.includes(gteq)) {
+                            ra = sr.split(gteq);
+                            mixedSigns(ra,gt,incdec);
+                        } else {
+                            ra = sr.split(gt);
+                            incdec = {left:true,right:true};
+                        } 
+                        if(ra.length == 2) {
+                            if(ra[0].includes(prcnt) || !isNaN(ra[0])) {
+                                obj.max = parseFloat(ra[0]);
+                                obj.feature = ra[1].trim();
+                            } else {
+                                obj.min = parseFloat(ra[1]);
+                                obj.feature = ra[0].trim();
+                            }
+                            
+                        } else {
+                            obj.feature = ra[1].trim();
+                            obj.max = parseFloat(ra[0]);
+                            obj.min = parseFloat(ra[2]);
+                        }
+                        if( incdec.left || incdec.right ) {
+                            obj.lt_gt = incdec;
+                        }
+                        arrOfObj.push(obj);
+                        
+                    }
+                } else if( j.includes(':')) {                
+                    let inner, a, objVal;
+                    inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));           
+                    a = inner.split(/\s*:\s*/);
+                    objName = a[0].trim();
+                    obj.feature = objName;
+                    objVal = parseFloat(a[1]);
+                    
+                    if( objName.includes('min-') || objName.includes('max-')) {
+                        objName = objName.replace('min-','');
+                        objName = objName.replace('max-','');
+                        obj.feature = objName;
+                        if(arrOfObj.length == 0) {
+                            if(a[0].includes('min-')) {
+                                obj.min = objVal;
+                            }
+                            if(a[0].includes('max-')) {
+                                obj.max = objVal;
+                            }                  
+                            arrOfObj.push(obj);
+                        } else {
+                            for(let i of arrOfObj) {
+                                if(i.feature != obj.feature) {
+                        
+                                    if(a[0].includes('min-')) {
+                                        obj.min = objVal;
+                                    }
+                                    if(a[0].includes('max-')) {
+                                        obj.max = objVal;
+                                    }
+                                    arrOfObj.push(obj);
+                                } else {
+                                    if(a[0].includes('min-')) {
+                                        i.min = objVal;
+                                    }
+                                    if(a[0].includes('max-')) {
+                                        i.max = objVal;
+                                    } 
+                                }
+                            }
+                        } 
+                    } else {
+                        obj.abs = objVal;
+                        arrOfObj.push(obj);
+                    }
+                } else {
+                    let inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));
+                    if(inner) {
+                        obj.feature = inner;
+                        obj.abs = true;
+                        arrOfObj.push(obj);
+                    }  
+                }
+            }         
+            arrayOfContexts.push(arrOfObj);
+        }
+        return arrayOfContexts;
+    }
+
+    determineMatch() {
+        let b = false;
+        for (let j of this._private.queries) {
+            let b2 = true;
+            for(let k of j){                 
+                let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
+                for(let feature of features ){
+                    if(feature.name === k.feature) {
+                        // Compare to values stored in Features object
+                        //if(feature.supported) {
+                            // has an unique value either numeric or boolean
+                            if(k.hasOwnProperty('abs')) {
+                                if(Number.isInteger(k.abs)) {
+                                    if(feature.value != k.abs) {
+                                        b2 = false;
+                                    }
+                                } else {
+                                    if(!feature.value) {
+                                        b2 = false;
+                                    }
+                                }
+                            } else {
+                                // Value is in range
+                                if(k.hasOwnProperty('min')) {
+                                    min = k.min;
+                                }         
+                                if(k.hasOwnProperty('max')) {
+                                    max = k.max;
+                                }
+                                if(k.hasOwnProperty('lt_gt')) {
+                                    if(k.lt_gt.left) {
+                                        ++min;
+                                    } 
+                                    if(k.lt_gt.right) {
+                                        --max;
+                                    }
+                                }
+                                if(min != -Infinity || max != Infinity) {                                  
+                                    if ( feature.value < min || max < feature.value) {
+                                        b2 = false;
+                                    }         
+                                }
+                            }
+                        //} else {
+                        //    b2 = false;
+                        //}
+                    }  
+                }              
+            }
+            if(b2) {
+                b = true;
+            }                                                      
+        }
+        if( b != this.matches ) {            
+            if(this.matches == undefined) {
+                return b;
+            } else {
+                this.matches = b;
+                this.dispatchEvent(new CustomEvent("change", { detail: { matches: b }}));
+            }
+                   
+        } 
+    }
+}
+
+///////********* helper function */
+
+function findClosingBracket(brackets, str){
+    let c = str.indexOf(brackets[0], str.indexOf('@context'));
+    let i = 1;
+    while (i > 0) {
+        let b = str[++c];
+        if (b == brackets[0]) {
+            i++;
+        }
+        else if (b == brackets[1]) {
+            i--;
+        }
+    }
+    return c;
+}
+
 class contextStyle extends HTMLElement {
     constructor() {
-        super(); 
+        super();
+        this.arrayOfQueries = [];
     }
     connectedCallback() {
-        if(this.parentNode.host != undefined) { root = this.parentNode.host } 
         this.href();
         this.style.display = 'none';     
     }
     content(attrctx) {
         let inner = this.innerHTML;    
         if(inner.trim() != ''){
-            generateContextStyles( inner.trim(), attrctx );
+            inner = inner.replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+            this.instantiateContextQueryObjects( inner.trim(), attrctx );
         } else {
             console.error('Context-Styles have not been declared, please use the href attribute or write them directly in the context-style tag.');
         }
@@ -43,13 +323,12 @@ class contextStyle extends HTMLElement {
     href() {
         let attrctx = false;
         if(this.hasAttribute('context') && this.getAttribute('context') != "") {
-            attrctx = this.getAttribute('context').replace(/>/g, '&gt;').replace(/</g, '&lt;');
+            attrctx = this.getAttribute('context'); 
         } 
         if(this.hasAttribute('href') && this.getAttribute('href') != "") {
             get(this.getAttribute('href')).then((response) => {
-                let rstr = response.replace(/>/g, '&gt;').replace(/</g, '&lt;');
-                generateContextStyles(rstr, attrctx);
-                this.content(attrctx);
+                this.instantiateContextQueryObjects(response, attrctx);
+                //this.content(attrctx);
             }, (error) => {
                 console.error("Failed!", error);
             });
@@ -59,8 +338,108 @@ class contextStyle extends HTMLElement {
         }   
     }
     
+    /**
+     * @param {string} str the content of the <context-style> custom element
+     * @param {string} attrctx the content of the context attribute 
+     */
+
+    instantiateContextQueryObjects(str,attr) {
+        this.factoriseContextQueries(str,attr);
+        let head = document.querySelector('head'), suffix = '.css-ctx-queries-', host; 
+        for(let contextQuery of this.arrayOfQueries) {
+            if(this.parentNode.host != undefined) {
+                if(!this.parentNode.host.shadowRoot.querySelector('slot')) {
+                    host = this.parentNode.host;
+                    head = this.parentNode.host.shadowRoot;
+                }
+            }
+            // Instantiate Object with new constructor
+            let cqo = new ContextQueryList(contextQuery.expression, host), css = "";
+            cqo.breakQueriesDown();
+            // Push the object into the global array
+            contextQueryObjectsList.push(cqo);
+
+            for(let style of contextQuery.styles) {
+                let key = style.selector;
+                if(this.parentNode.host != undefined) {
+                    if(!this.parentNode.host.shadowRoot.querySelector('slot')) {
+                        css += ':host(' + suffix + counter + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';
+                    } else {
+                        css += suffix + counter + ' ' + this.parentNode.host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
+                    }
+                } else {
+                    if(key === 'html') {
+                        css += key + suffix + counter + '{' + style.properties + '}';
+                    } else {
+                        css +=  suffix + counter + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}';
+                    }
+                }  
+            }
+           
+            if(head.querySelector('#cssCtxQueriesStyleTag')) {
+                head.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
+            } else {
+                let style = document.createElement('style');
+                style.id = 'cssCtxQueriesStyleTag';
+                style.appendChild(document.createTextNode(css));
+                head.appendChild(style);
+            } 
+            counter++;
+        }
+        console.log(contextQueryObjectsList);
+    }
+
+    /**
+     * @param {string} str the content of the <context-style> custom element
+     * @param {string} attrctx the content of the context attribute 
+     */
+
+    factoriseContextQueries(str, ctxattr) {   
+
+        if(str.includes('@context')){
+            let sbstrng = str.substring(str.indexOf("@context"), findClosingBracket('{}',str) + 1);
+            let str2 = str.replace(sbstrng,'');
+            str2 = str2.trim();
+            this.arrayOfQueries.push(sbstrng);
+            this.factoriseContextQueries(str2, ctxattr);
+        } else {
+            this.arrayOfQueries.push('@context'+ ctxattr +' {'+ str + '}');
+            let newArrayOfQueries = [];
+            for (let elm of (this.arrayOfQueries)) {
+                let expression = elm.substring(8, elm.indexOf('{'));
+                let styles = elm.substring(elm.indexOf('{') + 1,elm.lastIndexOf('}'));
+                let arrayOfSelectors = [], singleStyles = styles.split(/\s*}\s*/);
+                for (let z of singleStyles){
+                    let classes, attrs, classArr; 
+                    classes = z.substring(0,z.indexOf("{"));
+                    attrs =  z.substring(z.indexOf("{") + 1);                            
+                    classArr = classes.split(/\s*,\s*/);
+                    for(let sc of classArr) {
+                        let obj = { selector: sc.trim(), properties: attrs.trim() };
+                        if(obj.selector != "" || obj.properties !== "") {
+                            arrayOfSelectors.push(obj);
+                        }
+                    }
+                }
+
+                newArrayOfQueries.push({expression:expression.trim(),styles:arrayOfSelectors});
+            }
+            if(newArrayOfQueries.length > 1) {
+                let globalQuery = newArrayOfQueries[newArrayOfQueries.length - 1].expression;
+                for(let i = 0; i < newArrayOfQueries.length - 1; i++) {
+                    newArrayOfQueries[i].expression += ' and ' + globalQuery;
+                }
+            }
+            this.arrayOfQueries = [];
+            this.arrayOfQueries = newArrayOfQueries;
+            newArrayOfQueries = [];
+        }
+    }
+  
 }
+
 customElements.define('context-style', contextStyle);
+
 /**
  * @param {array} arr
  * @param {string} symbol
@@ -104,175 +483,131 @@ function mixedSigns(arr,symbol,indc) {
         //console.log(arr);
     }
 }
-/**
- * @param {string} str
- */
-function generateContextStyles(str, attrctx) {
-    
-    let contexts = str.split(/\s*@context\s*/), innerctx = true, or = /\s*,\s*|\s*or\s*/i;
-    for (let i of contexts) {    
-        if(i != ''){
-            let rules = i.substring(i.indexOf("("),i.indexOf("{")), ruleArr, lt = '&lt;', gt = '&gt;', lteq = '&lt;=', gteq = '&gt;=';
-            if(rules.includes('(') && rules.includes(')')){
-                ruleArr = rules.split(or);
-                if(attrctx) {
-                    let andAttr = attrctx.split(or), newRuleArr = [];
-                    for (let sar of andAttr) {
-                        for (let y in ruleArr) {
-                            newRuleArr.push( ruleArr[y] + ' and ' + sar);
-                        }
-                    }
-                    ruleArr = newRuleArr;
-                }
-            } else {
-                ruleArr = attrctx.split(or);
-            }
-            
-            for (let y of ruleArr) {
-                let contextRuleObj = { root: root, contexts: [],sheets: []},  arrOfObj = [], arrOfClasses = [], styles, singleStyles;
-                let andArr = y.split(/\s*and\s*/i);
-                for (let j of andArr) {
-                    let sr = j.substring(j.indexOf("(")+1,j.indexOf(")")), ra, prcnt = '%', obj = {}, objName, incdec = {left:false,right:false};
-                    if( j.includes(lt) || j.includes(gt) ) {               
-                        if (sr.includes(lt) && sr.includes(gt)) {
-                            console.error('you have mixed the greater than and less than symbol in an expression!');
-                            return;
-                        }
-                    
-                        if (sr.includes(lt)) {
-                            if (sr.includes(lteq)) {
-                                ra = sr.split(lteq);
-                                mixedSigns(ra,lt,incdec);
-                            } else {
-                                ra = sr.split(lt);
-                                incdec = {left:true,right:true};   	
-                            }  
-                            if(ra.length == 2) {
-                                if(ra[0].includes(prcnt) || !isNaN(ra[0])) {
-                                    obj.min = parseFloat(ra[0]); 
-                                    obj.feature = ra[1].trim();
-                                } else {
-                                    obj.max = parseFloat(ra[1]); 
-                                    obj.feature = ra[0].trim();                                
-                                }
-                            } else {
-                                obj.feature = ra[1].trim();
-                                obj.min = parseFloat(ra[0]);
-                                obj.max = parseFloat(ra[2]);
-                            }
-                            
-                            if( incdec.left || incdec.right ) {
-                                obj.lt_gt = incdec;
-                            }
-                            arrOfObj.push(obj);
-                        }
-                        if (sr.includes(gt)) {
-                            if (sr.includes(gteq)) {
-                                ra = sr.split(gteq);
-                                mixedSigns(ra,gt,incdec);
-                            } else {
-                                ra = sr.split(gt);
-                                incdec = {left:true,right:true};
-                            } 
-                            if(ra.length == 2) {
-                                if(ra[0].includes(prcnt) || !isNaN(ra[0])) {
-                                    obj.max = parseFloat(ra[0]);
-                                    obj.feature = ra[1].trim();
-                                } else {
-                                    obj.min = parseFloat(ra[1]);
-                                    obj.feature = ra[0].trim();
-                                }
-                                
-                            } else {
-                                obj.feature = ra[1].trim();
-                                obj.max = parseFloat(ra[0]);
-                                obj.min = parseFloat(ra[2]);
-                            }
-                            if( incdec.left || incdec.right ) {
-                                obj.lt_gt = incdec;
-                            }
-                            arrOfObj.push(obj);
-                            
-                        }
-                    } else if( j.includes(':')) {                
-                        let inner, a, objVal;
-                        inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));           
-                        a = inner.split(/\s*:\s*/);
-                        objName = a[0].trim();
-                        obj.feature = objName;
-                        objVal = parseFloat(a[1]);
-                        
-                        if( objName.includes('min-') || objName.includes('max-')) {
-                            objName = objName.replace('min-','');
-                            objName = objName.replace('max-','');
-                            obj.feature = objName;
-                            if(arrOfObj.length == 0) {
-                                if(a[0].includes('min-')) {
-                                    obj.min = objVal;
-                                }
-                                if(a[0].includes('max-')) {
-                                    obj.max = objVal;
-                                }                  
-                                arrOfObj.push(obj);
-                            } else {
-                                for(let i of arrOfObj) {
-                                    if(i.feature != obj.feature) {
-                            
-                                        if(a[0].includes('min-')) {
-                                            obj.min = objVal;
-                                        }
-                                        if(a[0].includes('max-')) {
-                                            obj.max = objVal;
-                                        }
-                                        arrOfObj.push(obj);
-                                    } else {
-                                        if(a[0].includes('min-')) {
-                                            i.min = objVal;
-                                        }
-                                        if(a[0].includes('max-')) {
-                                            i.max = objVal;
-                                        } 
-                                    }
-                                }
-                            } 
-                        } else {
-                            obj.abs = objVal;
-                            arrOfObj.push(obj);
-                        }
-                    } else {
-                        let inner = j.substring(j.indexOf("(")+1,j.indexOf(")"));
-                        if(inner) {
-                            obj.feature = inner;
-                            obj.abs = true;
-                            arrOfObj.push(obj);
-                        }  
-                    }
-                }
-                styles = (rules.includes('(') && rules.includes(')'))?i.substring(i.indexOf("{") + 1,i.lastIndexOf("}")):i;
-                singleStyles = styles.split(/\s*}\s*/);
-                for (let z of singleStyles){
-                    let classes, attrs, classArr; 
-                    classes = z.substring(0,z.indexOf("{"));
-                    attrs =  z.substring(z.indexOf("{") + 1);                            
-                    classArr = classes.split(/\s*,\s*/);
-                    for(let sc of classArr) {
-                        let obj = { element: sc.trim(), properties: attrs.trim() };
-                        if(obj.element != "" || obj.properties !== "") {
-                            arrOfClasses.push(obj);
-                        }
-                    }
-                }
-                // TODO prioritise the rules in context attr
-                contextRuleObj.contexts = arrOfObj;
-                contextRuleObj.sheets = arrOfClasses;
-                contextRules.push(contextRuleObj);
+
+/* 
+
+let EventTarget = (function() {
+    function EventTarget(listeners) {
+        this._listeners = {change: []};
+    }
+    EventTarget.prototype._listeners = null;
+    EventTarget.prototype.addEventListener = function(type, callback) {
+        if (!(type in this._listeners)) {
+            this._listeners[type] = [];
+        }
+        this._listeners[type].push(callback);
+    };
+
+    EventTarget.prototype.removeEventListener = function(type, callback) {
+        if (!(type in this._listeners)) {
+            return;
+        }
+        let stack = this._listeners[type];
+        console.log(stack);
+        for (let i in stack) {
+            console.log(stack[i]);  
+            if (stack[i].toString() === callback.toString()){
+                stack.splice(i, 1);
+                return;
             }
         }
+    };
+
+    EventTarget.prototype.dispatchEvent = function(event) {
+        if (!(event.type in this._listeners)) {
+            return true;
+        }
+        let stack = this._listeners[event.type];
+        console.log(stack);
+        event.target = this;
+        for (let elm of stack) {
+            elm.call(this, event);
+        }
+        return !event.defaultPrevented;
+    };
+    return EventTarget;
+}());
+
+// Same Eventtarget with weak map, listeners Object is "private"
+let EventTarget = (function() {
+    let listeners = new WeakMap();
+    function EventTarget() {
+        let private = {};
+        listeners.set(this, private);
     }
-    appendStyles(contextRules);      
-    // Show array on the console
-    console.log(contextRules);  
-}
+    EventTarget.prototype.listeners = null;
+    EventTarget.prototype.addEventListener = function(type, callback) {
+        if (!(type in listeners.get(this))) {
+            listeners.get(this)[type] = [];
+        }
+        listeners.get(this)[type].push(callback);
+    };
+
+    EventTarget.prototype.removeEventListener = function(type, callback) {
+        if (!(type in listeners.get(this))) {
+            return;
+        }
+        let stack = listeners.get(this)[type];
+        for (let i in stack) {
+            console.log(stack[i]);  
+            if (stack[i].toString() === callback.toString()){
+                stack.splice(i, 1);
+                return;
+            }
+        }
+    };
+
+    EventTarget.prototype.dispatchEvent = function(event) {
+        if (!(event.type in listeners.get(this))) {
+            return true;
+        }
+        let stack = listeners.get(this)[event.type];
+        event.target = this;
+        for (let elm of stack) {
+            elm.call(this, event);
+        }
+        return !event.defaultPrevented;
+    };
+
+    EventTarget.prototype.getListeners = function() {
+        return listeners.get(this);
+    };
+    return EventTarget;
+}());
+
+
+let ContextQueryList = (function(){
+    function ContextQueryList(expression){
+        EventTarget.call(this); // call super constructor.
+        this.context = expression;
+        this.onchange = null;
+        this.matches = false;
+    } 
+    // subclass extends superclass
+    ContextQueryList.prototype = Object.create(EventTarget.prototype);
+    ContextQueryList.prototype.constructor = ContextQueryList;
+
+    Object.defineProperty(ContextQueryList.prototype, 'matches', {
+        get: () => {
+            return this.matches;
+        }
+    });
+
+    Object.defineProperty(ContextQueryList.prototype, 'onchange', {
+        get: () => { return this.onchange },
+        set: (callback) => {
+            if(typeof callback == "function") {
+                this.onchange = callback;
+                ContextQueryList.prototype.addEventListener("change", callback);
+            } 
+        }
+    });
+    return ContextQueryList;
+}());
+*/
+
+
+
 /**   
  * @param {string} url
  */
@@ -294,42 +629,7 @@ function get(url) {
         req.send();
     });
 }
-// Append generated styles to head tag
-function appendStyles() {
-    let head = document.querySelector('head'), style = document.createElement('style'), suffix = '.css-ctx-queries-', css = "";
-    style.id = 'cssCtxQueriesStyleTag';
-    for(let i of contextRules) {
-        for(let styl of i.sheets) {
-            let key = styl.element;
-            if(i.root == root) {
-                if(i.root.shadowRoot) {
-                    if(!i.root.shadowRoot.querySelector('slot')) {
-                        css += ':host(' + suffix + (randomNum + contextRules.indexOf(i)) + ') ' + key.replace('&gt;','>') + '{' + styl.properties + '}';
-                    } else {
-                        css +=  suffix + (randomNum + contextRules.indexOf(i)) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; 
-                    }
-                } else {
-                    if(key === 'html') {
-                        css += key + suffix + (randomNum + contextRules.indexOf(i)) + '{' + styl.properties + '}';
-                    } else {
-                        css +=  suffix + (randomNum + contextRules.indexOf(i)) + ' ' + key.replace('&gt;','>') + '{' + styl.properties + '}'; // ">" selector
-                    }
-                }
-            }          
-        }
-    }
-    if(root.shadowRoot) {
-        if(!root.shadowRoot.querySelector('slot')) {
-            head = root.shadowRoot;
-        }
-    }
-    if(head.querySelector('#cssCtxQueriesStyleTag')) {
-        head.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
-    } else {
-        style.appendChild(document.createTextNode(css));
-        head.appendChild(style);
-    }   
-}
+
 // update features object based on event listener
 /**   
  * @param {string} n
@@ -349,70 +649,39 @@ function updateFeatVal(n,v) {
  */
 function performContextCheck(fname,val) {
     updateFeatVal(fname,val);
-    //let len = contextRules.length;
-    for (let i of contextRules) {
-        //len--;
-        let clss = 'css-ctx-queries-' + (randomNum + contextRules.indexOf(i)), b = true;
-        for (let j of i.contexts) {
-            let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
-            for(let feature of features ){
-                if(feature.name === j.feature) {
-                    // Compare to values stored in Features object
-                    if(feature.supported) {
-                        // has an unique value either numeric or boolean
-                        if(j.hasOwnProperty('abs')) {
-                            if(Number.isInteger(j.abs)) {
-                                if(feature.value != j.abs) {
-                                    b = false;
-                                }
-                            } else {
-                                if(!feature.value) {
-                                    b = false;
-                                }
-                            }
-                        } else {
-                            // Value is in range
-                            if(j.hasOwnProperty('min')) {
-                                min = j.min;
-                            }         
-                            if(j.hasOwnProperty('max')) {
-                                max = j.max;
-                            }
-                            if(j.hasOwnProperty('lt_gt')) {
-                                if(j.lt_gt.left) {
-                                    ++min;
-                                } 
-                                if(j.lt_gt.right) {
-                                    --max;
-                                }
-                            }
-                            if(min != -Infinity || max != Infinity) {                                  
-                                if ( feature.value < min || max < feature.value) {
-                                    b = false;
-                                }         
-                            }
-                        }
-                    } else {
-                        b = false;
-                    }
-                }  
-            }                                                   
+
+    for (let i of contextQueryObjectsList) {
+        if(i.context.includes(fname)){
+            i.determineMatch();
+            if(i._private.host != false) {
+                let root = document.querySelector("html"), clss = 'css-ctx-queries-' + contextQueryObjectsList.indexOf(i); 
+                if(i._private.host != undefined) {
+                    root = i._private.host;
+                }
+                if( i.matches ) {
+                    if(!root.classList.contains(clss)){                   
+                        root.classList.add(clss);
+                    }       
+                } else  {
+                    if(root.classList.contains(clss)) {         
+                        root.classList.remove(clss);
+                    }             
+                }
+            }
         }
-        
-        if( b ) {
-            if(!i.root.classList.contains(clss)){
-                //console.log('class added ' + clss + ' within min:' + min + ' max:' + max);
-                i.root.classList.add(clss);
-            }       
-        } else  {
-            if(i.root.classList.contains(clss)) {
-                //console.log('class removed ' + clss + ' within min:' + min + ' max:' + max);
-                i.root.classList.remove(clss);
-            }             
-        }      
-    
     }
 }
+
+// matchContext function to instantiate ContextQueryList Object with -- let varname = window.matchContext("(touch)") -- 
+window.matchContext = function(expression) {
+    var o = new ContextQueryList(expression, false);
+    setTimeout(function(){
+        contextQueryObjectsList.push(o);  
+    },0)                              
+    return o;
+}
+
+
 // event listener for devicelight
 window.addEventListener('devicelight', function(e) {      
     let normalised = e.value / 10; // normalise range from 0 to 100, max value on nexus 4 is 1000

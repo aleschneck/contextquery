@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="text/javascript" src="js/webcomponents-hi-sd-ce.js"></script>
     <link rel="import" href="html/context.min.html">
-    <link rel="stylesheet" media="(max-width: 360px)" type="text/css" href="stylesheets/queries.css" />
 
     <template id="foo-template">
         <style>
@@ -93,26 +92,26 @@
             display: block;
         }
     </style>
-    <context-style context="(10 < devicelight <= 30)">
-        body { background-color: black; color: white; }  
-        .code .rule {
-            color: mediumpurple;
-        }
-        .code .feat {
-            color: lightskyblue;
-        }
-        .code .value {
-            color: darkseagreen;
-        }
-        .code .stringval {
-            color: lightgray;
-        }
-        .code .selector {
-            color: #ffd966;
-        }
-        foo-elm {
-            background-color: #ccc;
-        }     
+    <context-style context="(touch) or (devicelight < 10)">      
+            body { background-color: black; color: white; }  
+            .code .rule {
+                color: mediumpurple;
+            }
+            .code .feat {
+                color: lightskyblue;
+            }
+            .code .value {
+                color: darkseagreen;
+            }
+            .code .stringval {
+                color: lightgray;
+            }
+            .code .selector {
+                color: #ffd966;
+            }
+            foo-elm {
+                background-color: #ccc;
+            }     
     </context-style>
     <script>
 
