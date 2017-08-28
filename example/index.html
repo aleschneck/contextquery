@@ -121,6 +121,7 @@
             motion = document.querySelector("#motion");
             outputElm = document.querySelector('.adapt');
             inputElm.addEventListener('change',function(){
+                e.stopPropagation();
                 performContextCheck( 'devicelight', parseInt(inputElm.value) ); // this not supported in Firefox
                 outputElm.innerHTML = inputElm.value;
             });

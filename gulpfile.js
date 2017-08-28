@@ -1,7 +1,8 @@
 var gulp = require('gulp');
 var htmlmin = require('gulp-htmlmin');
-var uglifyjs = require('uglify-js-harmony');
-var minifier = require('gulp-uglify/minifier');
+var uglifyjs = require('uglify-es');
+var composer = require('gulp-uglify/composer');
+var minifier = composer(uglifyjs, console); //require('gulp-uglify/minifier');
 var rename = require("gulp-rename");
 var pump = require('pump');
  
@@ -12,7 +13,7 @@ gulp.task('compress', function (cb) {
 
   pump([
         gulp.src('src/*.js'),
-        minifier({}, uglifyjs),
+        minifier({}),
         rename({ suffix: '.min' }),
         gulp.dest('dist'),
         gulp.dest('example/html')

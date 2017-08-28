@@ -22,13 +22,6 @@ let features = [
     console.log(features);
 })();
 
-
-        
-let counter = 0; // instantiated ContextQueryList objects
-let contextQueryObjectsList = [];
-
-let changeEvent = new CustomEvent("change"); 
-
 class ContextQueryList {
     constructor(query, host) {
         this.context = query;
@@ -44,7 +37,7 @@ class ContextQueryList {
         this._private.listeners[type].push(callback);
     };
 
-    addlistener(callback) {
+    addListener(callback) {
         this.addEventListener("change", callback);
     }
 
@@ -277,7 +270,7 @@ class ContextQueryList {
                 return b;
             } else {
                 this.matches = b;
-                this.dispatchEvent(new CustomEvent("change", { detail: { matches: b }}));
+                this.dispatchEvent(new CustomEvent("change", { detail: { matches: b, target: this }}));
             }
                    
         } 
@@ -333,7 +326,7 @@ class contextStyle extends HTMLElement {
                 console.error("Failed!", error);
             });
         } else {
-            console.log('href empty or non existent');
+            //console.log('href empty or non existent');
             this.content(attrctx);
         }   
     }
@@ -345,7 +338,7 @@ class contextStyle extends HTMLElement {
 
     instantiateContextQueryObjects(str,attr) {
         this.factoriseContextQueries(str,attr);
-        let head = document.querySelector('head'), suffix = '.css-ctx-queries-', host; 
+        let head = document.querySelector('head'), prefix = '.css-ctx-queries-', host; 
         for(let contextQuery of this.arrayOfQueries) {
             if(this.parentNode.host != undefined) {
                 if(!this.parentNode.host.shadowRoot.querySelector('slot')) {
@@ -357,21 +350,24 @@ class contextStyle extends HTMLElement {
             let cqo = new ContextQueryList(contextQuery.expression, host), css = "";
             cqo.breakQueriesDown();
             // Push the object into the global array
-            contextQueryObjectsList.push(cqo);
+            if(typeof window.contextQueryObjectsList == "undefined") {
+                window.contextQueryObjectsList = [];
+            }
+            window.contextQueryObjectsList.push(cqo);
 
             for(let style of contextQuery.styles) {
                 let key = style.selector;
                 if(this.parentNode.host != undefined) {
                     if(!this.parentNode.host.shadowRoot.querySelector('slot')) {
-                        css += ':host(' + suffix + counter + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';
+                        css += ':host(' + prefix + window.contextQueryObjectsList.indexOf(cqo) + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';
                     } else {
-                        css += suffix + counter + ' ' + this.parentNode.host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
+                        css += prefix + window.contextQueryObjectsList.indexOf(cqo) + ' ' + this.parentNode.host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
                     }
                 } else {
                     if(key === 'html') {
-                        css += key + suffix + counter + '{' + style.properties + '}';
+                        css += key + prefix + window.contextQueryObjectsList.indexOf(cqo) + '{' + style.properties + '}';
                     } else {
-                        css +=  suffix + counter + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}';
+                        css +=  prefix + window.contextQueryObjectsList.indexOf(cqo) + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}';
                     }
                 }  
             }
@@ -383,10 +379,9 @@ class contextStyle extends HTMLElement {
                 style.id = 'cssCtxQueriesStyleTag';
                 style.appendChild(document.createTextNode(css));
                 head.appendChild(style);
-            } 
-            counter++;
+            }
         }
-        console.log(contextQueryObjectsList);
+        //console.log(window.contextQueryObjectsList);
     }
 
     /**
@@ -650,11 +645,11 @@ function updateFeatVal(n,v) {
 function performContextCheck(fname,val) {
     updateFeatVal(fname,val);
 
-    for (let i of contextQueryObjectsList) {
+    for (let i of window.contextQueryObjectsList) {
         if(i.context.includes(fname)){
             i.determineMatch();
             if(i._private.host != false) {
-                let root = document.querySelector("html"), clss = 'css-ctx-queries-' + contextQueryObjectsList.indexOf(i); 
+                let root = document.querySelector("html"), clss = 'css-ctx-queries-' + window.contextQueryObjectsList.indexOf(i); 
                 if(i._private.host != undefined) {
                     root = i._private.host;
                 }
@@ -676,7 +671,10 @@ function performContextCheck(fname,val) {
 window.matchContext = function(expression) {
     var o = new ContextQueryList(expression, false);
     setTimeout(function(){
-        contextQueryObjectsList.push(o);  
+        if(typeof window.contextQueryObjectsList == "undefined") {
+            window.contextQueryObjectsList = [];
+        }
+        window.contextQueryObjectsList.push(o);  
     },0)                              
     return o;
 }
