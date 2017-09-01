@@ -359,7 +359,11 @@ class contextStyle extends HTMLElement {
                 let key = style.selector;
                 if(this.parentNode.host != undefined) {
                     if(!this.parentNode.host.shadowRoot.querySelector('slot')) {
-                        css += ':host(' + prefix + window.contextQueryObjectsList.indexOf(cqo) + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';
+                        if(key == ':host') {
+                            css += ':host(' + prefix + window.contextQueryObjectsList.indexOf(cqo) + ') ' + '{' + style.properties + '}'; 
+                        } else {
+                            css += ':host(' + prefix + window.contextQueryObjectsList.indexOf(cqo) + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';                            
+                        }
                     } else {
                         css += prefix + window.contextQueryObjectsList.indexOf(cqo) + ' ' + this.parentNode.host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
                     }

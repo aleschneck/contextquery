@@ -6,32 +6,10 @@
     <title>@Context</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="text/javascript" src="js/webcomponents-hi-sd-ce.js"></script>
+    <script src="js/awc-core.js"></script>
     <link rel="import" href="html/context.min.html">
-
-    <template id="foo-template">
-        <style>
-            ::slotted(p) { color: orange; }
-        </style>
-        <context-style context="(5 < devicelight < 15)">
-            p {
-                color: red;
-            }
-        </context-style>
-        <div>
-            <slot id="slt" name="par"></slot>
-        </div>
-    </template>
-    <template id="foo-template-2">
-        <style>
-            p { color: violet; }
-        </style>
-        <context-style context="(6 < devicelight < 14)">
-            p {
-                color: yellow;
-            }
-        </context-style>
-        <p>I'm entirely in Shadow DOM. My markup was stamped from a &lt;template&gt; </p>
-    </template>
+    
+  
     <style>
         html, body {
             position: relative;
@@ -92,7 +70,7 @@
             display: block;
         }
     </style>
-    <context-style context="(touch) or (devicelight < 10)">      
+    <context-style context="(devicelight < 10)">      
             body { background-color: black; color: white; }  
             .code .rule {
                 color: mediumpurple;
@@ -108,10 +86,7 @@
             }
             .code .selector {
                 color: #ffd966;
-            }
-            foo-elm {
-                background-color: #ccc;
-            }     
+            }   
     </context-style>
     <script>
 
@@ -120,7 +95,7 @@
             inputElm = document.querySelector("#in");
             motion = document.querySelector("#motion");
             outputElm = document.querySelector('.adapt');
-            inputElm.addEventListener('change',function(){
+            inputElm.addEventListener('change',function(e){
                 e.stopPropagation();
                 performContextCheck( 'devicelight', parseInt(inputElm.value) ); // this not supported in Firefox
                 outputElm.innerHTML = inputElm.value;
@@ -130,33 +105,195 @@
             });
         });
 
-        // Check if Polyfill is working
-        window.addEventListener('HTMLImportsLoaded', function(e) {
-            //console.log('HTML Imports Loaded');
-        });
+        document.profilestore = new awc.LocalProfileStore();
+    
+    class AdaptiveClock extends awc.AdaptiveComponent(HTMLElement) {
+      constructor() {
+        super();
 
-        class fooElm extends HTMLElement {
-            constructor() {
-                super();            
-            }
-            connectedCallback() {
-                let shadowRoot = this.attachShadow({mode: 'open'});
-                const t = document.querySelector(this.getAttribute('tpl'));
-                const instance = t.content.cloneNode(true);
-                shadowRoot.appendChild(instance);
-            }
+        this._time = null;
+
+        this._autoupdater = this._update.bind(this);
+      }
+
+      static get observedAttributes() { 
+        return ['time'];
+      }
+
+      get time() {
+        return this.getAttribute('time');
+      }
+
+      set time(val) {
+        this.setAttribute('time', val);
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+
+        console.log(`ParentElement: ${this.parentElement}, ParentHode: ${this.parentNode}`);
+
+        if (this._time == null) {
+          setInterval(this._autoupdater, 1000);
         }
+        this._update();
+      }
 
-        customElements.define('foo-elm', fooElm);
+      attributeChangedCallback(name, oldValue, newValue) {
+        super.attributeChangedCallback(name, oldValue, newValue);
+
+        if ('time' == name && newValue != null) {
+          this._time = new Date('1970-01-01T' + newValue);
+          this._update();
+
+        } else if ('time' == name) {
+          // Show auto updated current time
+          this._time = null;
+          setInterval(this._autoupdater, 1000);
+          this._update();
+        }
+      }
+
+      performAdaptation(profile) {
+        super.performAdaptation(profile);
+        this._update();
+      }
+
+      _update() {
+        if (this._currentVariant != null) {
+          this._currentVariant.show(this._time != null ? this._time : new Date());
+        }
+      }
+    }
+
+    class TextClock extends awc.AdaptiveVariant {
+      constructor() {
+        super();
+      }
+
+      get template() {
+        return document.querySelector('template#text').content;
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+
+        this._hour = this.contentRoot.querySelector("#h");
+        this._minute = this.contentRoot.querySelector("#m");
+        this._second = this.contentRoot.querySelector("#s");
+      }
+
+      show(time) {
+        let h = time.getHours();
+        let m = time.getMinutes();
+        let s = time.getSeconds();
+            
+        if (h < 10) { h = '0'+h }
+        if (m < 10) { m = '0'+m }
+        if (s < 10) { s = '0'+s }
+            
+        this._hour.innerText = h;
+        this._minute.innerText = m;
+        this._second.innerText = s;
+      }
+
+      static matches(context) {
+        return context['display-mode'] == 'text';
+      }
+    }
+
+    class GraphicClock extends awc.AdaptiveVariant {
+      constructor() {
+        super();
+      }
+
+      get template() {
+        return document.querySelector('template#graphic').content;
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+
+        this._canvas = this.contentRoot.querySelector('canvas');
+        this._ctx = this._canvas.getContext('2d');
+      }
+
+      show(time) {
+        let center = {x: this._canvas.clientWidth/2, y: this._canvas.clientHeight/2 };
+        let h = time.getHours();
+        let m = time.getMinutes();
+        let s = time.getSeconds();
+
+        this._ctx.clearRect(0, 0, this._canvas.clientWidth, this._canvas.clientHeight);
+        this._ctx.beginPath();
+        this._ctx.arc(center.x, center.y, Math.min(center.x, center.y)-2, Math.PI/-2, (h%12)*Math.PI/6-Math.PI/2);
+        this._ctx.stroke();
+        this._ctx.beginPath();
+        this._ctx.arc(center.x, center.y, Math.min(center.x, center.y)-10, Math.PI/-2, m*Math.PI/30-Math.PI/2);
+        this._ctx.stroke();
+        this._ctx.beginPath();
+        this._ctx.arc(center.x, center.y, Math.min(center.x, center.y)-18, Math.PI/-2, s*Math.PI/30-Math.PI/2);
+        this._ctx.stroke();
+      }
+
+      static matches(context) {
+        return context['display-mode'] == 'graphic';
+      }
+    }
+
+    AdaptiveClock.registerVariant(GraphicClock);
+    AdaptiveClock.registerVariant(TextClock);
+
+    AdaptiveClock.defaultVariant = TextClock;
+    
+    customElements.define('adaptive-clock', AdaptiveClock);
 
     </script>
 
 </head>
 <body class="body">
+        <template id="graphic">
+            <context-style context="(devicelight < 10)">      
+                :host {
+                    background-color: white;
+                }   
+            </context-style>
+            <style>
+                :host {
+                    display: block;
+                    border: 1px solid blue;
+                }
+            </style>
+            <canvas></canvas>
+        </template>
+        <template id="text">
+            <style>
+                :host {
+                display: block;
+                border: 3px dotted green;
+                background-color: white;
+                color: black;
+                }
+            </style>
+            <p>
+                <span id="h">hh</span>:<span id="m">mm</span>:<span id="s">ss</span>
+            </p>
+        </template>
 
 <header class="navbar">
 </header>
 <main>
+        <div id="wrap">
+                <script>
+                  let wrap = document.querySelector('#wrap');
+                  document.volatileprofile = new awc.ProfileStore(true, wrap);
+                </script>
+            
+                <adaptive-clock></adaptive-clock>
+            
+                <button onclick="document.volatileprofile.changeProfile({'display-mode': 'text'});">Text</button>
+                <button onclick="document.volatileprofile.changeProfile({'display-mode': 'graphic'});">Graphic</button>
+              </div>
     <div class="container">
         <div class="inner">
             <div class="adapt">0</div>
@@ -179,10 +316,7 @@
                     }
                 </code>
             </div>
-            <foo-elm tpl="#foo-template">
-                <p slot="par">I'm in Shadow DOM. My markup was stamped from a &lt;template&gt;, I'm using the &lt;slot&gt; element.</p>
-            </foo-elm>
-            <foo-elm tpl="#foo-template-2"></foo-elm>
+
         </div>
     </div>
 </footer>
