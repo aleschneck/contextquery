@@ -70,23 +70,23 @@
             display: block;
         }
     </style>
-    <context-style context="(devicelight < 10)">      
-            body { background-color: black; color: white; }  
-            .code .rule {
-                color: mediumpurple;
-            }
-            .code .feat {
-                color: lightskyblue;
-            }
-            .code .value {
-                color: darkseagreen;
-            }
-            .code .stringval {
-                color: lightgray;
-            }
-            .code .selector {
-                color: #ffd966;
-            }   
+    <context-style context="(devicelight < 10)">          
+        body { background-color: black; color: white; }  
+        .code .rule {
+            color: mediumpurple;
+        }
+        .code .feat {
+            color: lightskyblue;
+        }
+        .code .value {
+            color: darkseagreen;
+        }
+        .code .stringval {
+            color: lightgray;
+        }
+        .code .selector {
+            color: #ffd966;
+        }         
     </context-style>
     <script>
 
@@ -253,15 +253,26 @@
 </head>
 <body class="body">
         <template id="graphic">
-            <context-style context="(devicelight < 10)">      
-                :host {
-                    background-color: white;
-                }   
+            <context-style>             
+                @context (devicelight < 10) {
+                    :host {
+                        border: 1px solid red;
+                        background-color: white;
+                    }
+                }
+        
+                @context (touch) {
+                    :host {
+                        background-color: pink;
+                    }
+                    
+                }
             </context-style>
             <style>
                 :host {
                     display: block;
                     border: 1px solid blue;
+                    background-color: lightgrey;
                 }
             </style>
             <canvas></canvas>
@@ -275,6 +286,11 @@
                 color: black;
                 }
             </style>
+            <context-style context="(devicelight < 10)">                           
+                :host {
+                    background-color: pink;
+                }                   
+            </context-style>
             <p>
                 <span id="h">hh</span>:<span id="m">mm</span>:<span id="s">ss</span>
             </p>
@@ -285,14 +301,25 @@
 <main>
         <div id="wrap">
                 <script>
-                  let wrap = document.querySelector('#wrap');
-                  document.volatileprofile = new awc.ProfileStore(true, wrap);
+                    let wrap = document.querySelector('#wrap');
+                    document.volatileprofile = new awc.ProfileStore(true, wrap);
+                    let dms = [{'display-mode': 'text'},  {'display-mode': 'graphic'}];
+                    let dllt10 = window.matchContext('(devicelight < 10)');
+             
+                    dllt10.onchange = function(e) {
+                        console.log(e);
+                        if (e.detail.matches) {
+                            document.volatileprofile.changeProfile(dms[0]);
+                        } else {
+                            document.volatileprofile.changeProfile(dms[1]);
+                        }
+                    }
                 </script>
             
                 <adaptive-clock></adaptive-clock>
             
-                <button onclick="document.volatileprofile.changeProfile({'display-mode': 'text'});">Text</button>
-                <button onclick="document.volatileprofile.changeProfile({'display-mode': 'graphic'});">Graphic</button>
+                <button onclick="document.volatileprofile.changeProfile(dms[0]);">Text</button>
+                <button onclick="document.volatileprofile.changeProfile(dms[1]);">Graphic</button>
               </div>
     <div class="container">
         <div class="inner">

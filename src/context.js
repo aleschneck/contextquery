@@ -23,10 +23,15 @@ let features = [
 })();
 
 class ContextQueryList {
-    constructor(query, host) {
+    constructor(query, host, selectors = '') {
         this.context = query;
         this.onchange = null;
-        this._private = { listeners: {}, host: host, queries: this.breakQueriesDown() };
+        this._private = { 
+            listeners: {}, 
+            host: host, 
+            selectors: selectors,
+            queries: this.breakQueriesDown() 
+        };
         this.matches = this.determineMatch();
     }
 
@@ -272,7 +277,7 @@ class ContextQueryList {
                 this.matches = b;
                 this.dispatchEvent(new CustomEvent("change", { detail: { matches: b, target: this }}));
             }
-                   
+                    
         } 
     }
 }
@@ -298,12 +303,31 @@ class contextStyle extends HTMLElement {
     constructor() {
         super();
         this.arrayOfQueries = [];
+        this._host = undefined;
+        this._head = document.querySelector('head');
     }
     connectedCallback() {
-        this.href();
-        this.style.display = 'none';     
+        this.style.display = 'none';
+        if(this.parentNode.host != undefined) {
+            if(!this.parentNode.host.shadowRoot.querySelector('slot')) {
+                this._host = this.parentNode.host;
+                this._head = this._host.shadowRoot;
+            }
+        }
+        this.getHrefAttr();
     }
-    content(attrctx) {
+    disconnectedCallback() {
+        for(let i = 0; i < window.contextQueryObjectsList.length; i++) {
+            for(let j of this.arrayOfQueries) {              
+                if((window.contextQueryObjectsList[i]._private.host === this._host) 
+                    && (window.contextQueryObjectsList[i].context === j.expression) 
+                    && (JSON.stringify(window.contextQueryObjectsList[i]._private.selectors) === JSON.stringify(j.styles)) ) {
+                    window.contextQueryObjectsList.splice(i,1);
+                }
+            }
+        }
+    }
+    getContent(attrctx) {
         let inner = this.innerHTML;    
         if(inner.trim() != ''){
             inner = inner.replace(/&gt;/g, '>').replace(/&lt;/g, '<');
@@ -313,13 +337,13 @@ class contextStyle extends HTMLElement {
         }
                 
     }
-    href() {
+    getHrefAttr() {
         let attrctx = false;
         if(this.hasAttribute('context') && this.getAttribute('context') != "") {
             attrctx = this.getAttribute('context'); 
         } 
         if(this.hasAttribute('href') && this.getAttribute('href') != "") {
-            get(this.getAttribute('href')).then((response) => {
+            this.getURL(this.getAttribute('href')).then((response) => {
                 this.instantiateContextQueryObjects(response, attrctx);
                 //this.content(attrctx);
             }, (error) => {
@@ -327,8 +351,30 @@ class contextStyle extends HTMLElement {
             });
         } else {
             //console.log('href empty or non existent');
-            this.content(attrctx);
+            this.getContent(attrctx);
         }   
+    }
+
+    /**   
+     * @param {string} url
+     */
+    getURL(url) {
+        return new Promise(function(resolve, reject) {
+            var req = new XMLHttpRequest();
+            req.open('GET', url);
+            req.onload = function() {
+                if (req.status == 200) {
+                    resolve(req.response);
+                }
+                else {
+                    reject(Error(req.statusText));
+                }
+            };
+            req.onerror = function() {
+                reject(Error("Network Error"));
+            };
+            req.send();
+        });
     }
     
     /**
@@ -338,27 +384,24 @@ class contextStyle extends HTMLElement {
 
     instantiateContextQueryObjects(str,attr) {
         this.factoriseContextQueries(str,attr);
-        let head = document.querySelector('head'), prefix = '.css-ctx-queries-', host; 
+        const prefix = '.css-ctx-queries-'; 
         for(let contextQuery of this.arrayOfQueries) {
-            if(this.parentNode.host != undefined) {
-                if(!this.parentNode.host.shadowRoot.querySelector('slot')) {
-                    host = this.parentNode.host;
-                    head = this.parentNode.host.shadowRoot;
-                }
-            }
             // Instantiate Object with new constructor
-            let cqo = new ContextQueryList(contextQuery.expression, host), css = "";
+            let cqo = new ContextQueryList(contextQuery.expression, this._host, contextQuery.styles), css = "";
             cqo.breakQueriesDown();
-            // Push the object into the global array
+            // Check if window.contextQueryObjectsList has not been initialised
             if(typeof window.contextQueryObjectsList == "undefined") {
                 window.contextQueryObjectsList = [];
             }
-            window.contextQueryObjectsList.push(cqo);
 
+            // Push object into window.contextQueryObjectsList          
+            window.contextQueryObjectsList.push(cqo);
+            
+            
             for(let style of contextQuery.styles) {
                 let key = style.selector;
-                if(this.parentNode.host != undefined) {
-                    if(!this.parentNode.host.shadowRoot.querySelector('slot')) {
+                if(this._host != undefined) {
+                    if(!this._host.shadowRoot.querySelector('slot')) {
                         if(key == ':host') {
                             css += ':host(' + prefix + window.contextQueryObjectsList.indexOf(cqo) + ') ' + '{' + style.properties + '}'; 
                         } else {
@@ -375,14 +418,14 @@ class contextStyle extends HTMLElement {
                     }
                 }  
             }
-           
-            if(head.querySelector('#cssCtxQueriesStyleTag')) {
-                head.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
+            
+            if(this._head.querySelector('#cssCtxQueriesStyleTag')) {
+                this._head.querySelector('#cssCtxQueriesStyleTag').appendChild(document.createTextNode(css));
             } else {
                 let style = document.createElement('style');
                 style.id = 'cssCtxQueriesStyleTag';
                 style.appendChild(document.createTextNode(css));
-                head.appendChild(style);
+                this._head.appendChild(style);
             }
         }
         //console.log(window.contextQueryObjectsList);
@@ -390,11 +433,10 @@ class contextStyle extends HTMLElement {
 
     /**
      * @param {string} str the content of the <context-style> custom element
-     * @param {string} attrctx the content of the context attribute 
+     * @param {string} attrctx the content of the context attribute, false if the context attribute is empty
      */
 
-    factoriseContextQueries(str, ctxattr) {   
-
+    factoriseContextQueries(str, ctxattr) { 
         if(str.includes('@context')){
             let sbstrng = str.substring(str.indexOf("@context"), findClosingBracket('{}',str) + 1);
             let str2 = str.replace(sbstrng,'');
@@ -402,9 +444,12 @@ class contextStyle extends HTMLElement {
             this.arrayOfQueries.push(sbstrng);
             this.factoriseContextQueries(str2, ctxattr);
         } else {
-            this.arrayOfQueries.push('@context'+ ctxattr +' {'+ str + '}');
+            // push the query from the context attribute into arrayOfQueries
+            if(ctxattr != false) {
+                this.arrayOfQueries.push('@context '+ ctxattr +' {'+ str + '}');
+            }
             let newArrayOfQueries = [];
-            for (let elm of (this.arrayOfQueries)) {
+            for (let elm of this.arrayOfQueries) {
                 let expression = elm.substring(8, elm.indexOf('{'));
                 let styles = elm.substring(elm.indexOf('{') + 1,elm.lastIndexOf('}'));
                 let arrayOfSelectors = [], singleStyles = styles.split(/\s*}\s*/);
@@ -420,21 +465,27 @@ class contextStyle extends HTMLElement {
                         }
                     }
                 }
-
-                newArrayOfQueries.push({expression:expression.trim(),styles:arrayOfSelectors});
+                
+                newArrayOfQueries.push({expression:expression.trim(),styles:arrayOfSelectors});  
             }
-            if(newArrayOfQueries.length > 1) {
+            
+            // factorise all objects in arrayOfQueries only if there's a global query and more than one query in total 
+            if(ctxattr != false) {
                 let globalQuery = newArrayOfQueries[newArrayOfQueries.length - 1].expression;
                 for(let i = 0; i < newArrayOfQueries.length - 1; i++) {
                     newArrayOfQueries[i].expression += ' and ' + globalQuery;
                 }
             }
             this.arrayOfQueries = [];
-            this.arrayOfQueries = newArrayOfQueries;
-            newArrayOfQueries = [];
-        }
+            // reorganise arrayOfQueries
+            for (let i of newArrayOfQueries) {
+                if(i.styles.length > 0) {
+                    this.arrayOfQueries.push(i);
+                }
+            }
+        }      
     }
-  
+    
 }
 
 customElements.define('context-style', contextStyle);
@@ -607,28 +658,6 @@ let ContextQueryList = (function(){
 
 
 
-/**   
- * @param {string} url
- */
-function get(url) {
-    return new Promise(function(resolve, reject) {
-        var req = new XMLHttpRequest();
-        req.open('GET', url);
-        req.onload = function() {
-            if (req.status == 200) {
-                resolve(req.response);
-            }
-            else {
-                reject(Error(req.statusText));
-            }
-        };
-        req.onerror = function() {
-            reject(Error("Network Error"));
-        };
-        req.send();
-    });
-}
-
 // update features object based on event listener
 /**   
  * @param {string} n
@@ -650,24 +679,24 @@ function performContextCheck(fname,val) {
     updateFeatVal(fname,val);
 
     for (let i of window.contextQueryObjectsList) {
-        if(i.context.includes(fname)){
-            i.determineMatch();
-            if(i._private.host != false) {
-                let root = document.querySelector("html"), clss = 'css-ctx-queries-' + window.contextQueryObjectsList.indexOf(i); 
-                if(i._private.host != undefined) {
-                    root = i._private.host;
-                }
-                if( i.matches ) {
-                    if(!root.classList.contains(clss)){                   
-                        root.classList.add(clss);
-                    }       
-                } else  {
-                    if(root.classList.contains(clss)) {         
-                        root.classList.remove(clss);
-                    }             
-                }
+        
+        i.determineMatch();
+        if(i._private.host != false) {
+            let root = document.querySelector("html"), clss = 'css-ctx-queries-' + window.contextQueryObjectsList.indexOf(i); 
+            if(i._private.host != undefined) {
+                root = i._private.host;
+            }
+            if( i.matches ) {
+                if(!root.classList.contains(clss)){                   
+                    root.classList.add(clss);
+                }       
+            } else  {
+                if(root.classList.contains(clss)) {         
+                    root.classList.remove(clss);
+                }             
             }
         }
+        
     }
 }
 
