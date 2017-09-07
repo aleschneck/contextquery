@@ -97,11 +97,12 @@
             outputElm = document.querySelector('.adapt');
             inputElm.addEventListener('change',function(e){
                 e.stopPropagation();
-                performContextCheck( 'devicelight', parseInt(inputElm.value) ); // this not supported in Firefox
+                window.contextFeatures[0].value = inputElm.value;
+                //performContextCheck( 'devicelight', parseInt(inputElm.value) ); // this not supported in Firefox
                 outputElm.innerHTML = inputElm.value;
             });
             motion.addEventListener('change',function(){
-                performContextCheck( 'devicemotion', parseInt(motion.value) );
+                //performContextCheck( 'devicemotion', parseInt(motion.value) );
             });
         });
 
@@ -253,19 +254,10 @@
 </head>
 <body class="body">
         <template id="graphic">
-            <context-style>             
-                @context (devicelight < 10) {
-                    :host {
-                        border: 1px solid red;
-                        background-color: white;
-                    }
-                }
-        
-                @context (touch) {
-                    :host {
-                        background-color: pink;
-                    }
-                    
+            <context-style context="(15 < devicelight)">                         
+                :host {
+                    border: 1px solid red;
+                    background-color: white;
                 }
             </context-style>
             <style>
@@ -280,17 +272,13 @@
         <template id="text">
             <style>
                 :host {
-                display: block;
-                border: 3px dotted green;
-                background-color: white;
-                color: black;
+                    display: block;
+                    border: 3px dotted green;
+                    background-color: white;
+                    color: black;
                 }
             </style>
-            <context-style context="(devicelight < 10)">                           
-                :host {
-                    background-color: pink;
-                }                   
-            </context-style>
+            
             <p>
                 <span id="h">hh</span>:<span id="m">mm</span>:<span id="s">ss</span>
             </p>
