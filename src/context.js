@@ -5,11 +5,12 @@ window.contextFeatures = [
     { name: 'deviceproximity', value: null, callback: null },
     { name: 'touch', value: null, callback: function() { return ('ontouchstart' in window || navigator.maxTouchPoints)?true:false } },
     { name: 'time', value: null, callback: function() { return true }},
-    { name: 'battery', value: null, callback: function() { return true }}
+    { name: 'battery', value: null, callback: function() { return (navigator.getBattery)?true:false }},
+    { name: 'charging-battery', value: null, callback: function() { return (navigator.getBattery)?true:false }}
 ];
 
 (function () {
-    for(feature of window.contextFeatures) {
+    for(let feature of window.contextFeatures) {
         if(feature.callback == null) {
             if('on' + feature.name in window) {
                 feature.supported = true;
@@ -25,16 +26,18 @@ window.contextFeatures = [
 
 class ContextQueryList {
     constructor(query, host, selectors = '') {
+        // 'Private'
+        this._onchange = null;
+        this._listeners = {}; 
+        this._host = host; 
+        this._selectors = selectors;
+        this._queries = this._breakQueriesDown(query);
+        this._class = (host)?'css-ctx-queries-' + (+new Date).toString(36):undefined;
+        this._intervalID = undefined;
+        // 'Public'
         this.context = query;
-        this.onchange = null;
-        this._private = { 
-            listeners: {}, 
-            host: host, 
-            selectors: selectors,
-            queries: this._breakQueriesDown(),
-            class: 'css-ctx-queries-' + (+new Date).toString(36)
-        };
         this.matches = this._determineMatch();
+        // attach event listeners
         this._registerListeners();
     }
 
@@ -44,9 +47,17 @@ class ContextQueryList {
             this._performContextCheck('devicelight',Math.round(normalised));
         });
         this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
-        setInterval(() => {
+        this._intervalID = setInterval(() => {
             this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
         },1000);
+        navigator.getBattery().then(function(battery) {
+            battery.addEventListener('chargingchange',function(){
+                this._performContextCheck('charging-battery',battery.charging);
+            });
+            battery.addEventListener('levelchange', function(){
+                this._performContextCheck('battery', battery.level * 100 + '%');
+            });
+        });
     }
 
     /**   
@@ -61,14 +72,14 @@ class ContextQueryList {
             }
         }
         this._determineMatch();
-        if(this._private.host != false) {     
+        if(this._host != false) {     
             if( this.matches ) {
-                if(!this._private.host.classList.contains(this._private.class)){                   
-                    this._private.host.classList.add(this._private.class);
+                if(!this._host.classList.contains(this._class)){                   
+                    this._host.classList.add(this._class);
                 }       
             } else  {
-                if(this._private.host.classList.contains(this._private.class)) {         
-                    this._private.host.classList.remove(this._private.class);
+                if(this._host.classList.contains(this._class)) {         
+                    this._host.classList.remove(this._class);
                 }             
             }
         }
@@ -80,10 +91,10 @@ class ContextQueryList {
      */
 
     addEventListener(type, callback) {
-        if (!(type in this._private.listeners)) {
-            this._private.listeners[type] = [];
+        if (!(type in this._listeners)) {
+            this._listeners[type] = [];
         }
-        this._private.listeners[type].push(callback);
+        this._listeners[type].push(callback);
     };
 
     /** 
@@ -100,10 +111,10 @@ class ContextQueryList {
      */
 
     removeEventListener(type, callback) {
-        if (!(type in this._private.listeners)) {
+        if (!(type in this._listeners)) {
             return;
         }
-        let stack = this._private.listeners[type];
+        let stack = this._listeners[type];
 
         for (let i in stack) {
             console.log(stack[i]);  
@@ -127,10 +138,10 @@ class ContextQueryList {
      */
 
     dispatchEvent(event) {
-        if (!(event.type in this._private.listeners)) {
+        if (!(event.type in this._listeners)) {
             return true;
         }
-        let stack = this._private.listeners[event.type];
+        let stack = this._listeners[event.type];
 
         //event.target = this;
         for (let elm of stack) {
@@ -145,18 +156,21 @@ class ContextQueryList {
 
     set onchange(callback) {    
         if(typeof callback == "function") {
-            this.removeEventListener("change", this.onchange);
-            onchange = callback;
+            this.removeEventListener("change", this._onchange);
+            this._onchange = callback;
             this.addEventListener("change", callback);
         } 
     } 
 
     get onchange() {
-        return onchange;
+        return this._onchange;
     }
 
 
-    _breakQueriesDown() {
+    /**   
+     * @param {string} context 
+     */
+    _breakQueriesDown(context) {
         /**
          * @param {array} arr
          * @param {string} symbol
@@ -200,7 +214,7 @@ class ContextQueryList {
                 //console.log(arr);
             }
         }
-        let arrayOfContexts = [], or = /\s*,\s*|\s*or\s*/i, orArr = this.context.split(or), lt = '<', gt = '>', lteq = '<=', gteq = '>=';
+        let arrayOfContexts = [], or = /\s*,\s*|\s*or\s*/i, orArr = context.split(or), lt = '<', gt = '>', lteq = '<=', gteq = '>=';
         for (let y of orArr) {
             let contextRuleObj = { contexts: [] },  arrOfObj = [];
             let andArr = y.split(/\s*and\s*/i);
@@ -328,7 +342,7 @@ class ContextQueryList {
 
     _determineMatch() {
         let b = false;
-        for (let j of this._private.queries) {
+        for (let j of this._queries) {
             let b2 = true;
             for(let k of j){                 
                 let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
@@ -391,13 +405,14 @@ class ContextQueryList {
     }
 }
 
-class contextStyle extends HTMLElement {
+class ContextStyle extends HTMLElement {
 
     constructor() {
         super();
         this.arrayOfQueries = [];
         this._host = document.querySelector("html");
         this._head = document.querySelector('head');
+        this._contextQueryObjectList = [];
     }
 
     connectedCallback() {
@@ -407,19 +422,28 @@ class contextStyle extends HTMLElement {
                 this._host = this.parentNode.host;
                 this._head = this._host.shadowRoot;
             }
-        } 
+        }
         this.getHrefAttr();
     }
 
     disconnectedCallback() {
-
+        for(let i in this._contextQueryObjectList) {
+            if(this._contextQueryObjectList[i]._intervalID != undefined) {
+                clearInterval(this._contextQueryObjectList[i]._intervalID);
+            }
+            this._host.classList.remove(this._contextQueryObjectList[i]._class);
+            this._contextQueryObjectList[i] = null;
+            delete this._contextQueryObjectList[i];
+        }
+        this._contextQueryObjectList.length = 0;
+        //console.log(this._contextQueryObjectList);
     }
 
     /**
      * @param {string} attr - the query from the "context" attribute   
      */
     getContent(attr) {
-        let inner = this.innerHTML;    
+        let inner = this.innerHTML;  
         if(inner.trim() != ''){
             inner = inner.replace(/&gt;/g, '>').replace(/&lt;/g, '<');
             this.instantiateContextQueryObjects( inner.trim(), attr );
@@ -480,25 +504,25 @@ class contextStyle extends HTMLElement {
         for(let contextQuery of this.arrayOfQueries) {
             // Instantiate Object with new constructor
             let cqo = new ContextQueryList(contextQuery.expression, this._host, contextQuery.styles), css = "";
-            console.log(cqo);
+            this._contextQueryObjectList.push(cqo);
             
-            for(let style of cqo._private.selectors) {
+            for(let style of cqo._selectors) {
                 let key = style.selector;
-                if(cqo._private.host.shadowRoot != undefined) {
-                    if(!cqo._private.host.shadowRoot.querySelector('slot')) {
+                if(cqo._host.shadowRoot != undefined) {
+                    if(!cqo._host.shadowRoot.querySelector('slot')) {
                         if(key == ':host') {
-                            css += ':host(.' + cqo._private.class + ') ' + '{' + style.properties + '}'; 
+                            css += ':host(.' + cqo._class + ') ' + '{' + style.properties + '}'; 
                         } else {
-                            css += ':host(.' + cqo._private.class + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';                            
+                            css += ':host(.' + cqo._class + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';                            
                         }
                     } else {
-                        css += '.' + cqo._private.class + ' ' + cqo._private.host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
+                        css += '.' + cqo._class + ' ' + cqo._host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
                     }
                 } else {
                     if(key === 'html') {
-                        css += key +  '.' + cqo._private.class + '{' + style.properties + '}';
+                        css += key +  '.' + cqo._class + '{' + style.properties + '}';
                     } else {
-                        css += '.' + cqo._private.class + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}';
+                        css += '.' + cqo._class + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}';
                     }
                 }  
             }
@@ -512,7 +536,7 @@ class contextStyle extends HTMLElement {
                 this._head.appendChild(style);
             }
         }
-        //console.log(window.contextQueryObjectsList);
+        console.log(this._contextQueryObjectList);
     }
 
     /**
@@ -592,11 +616,11 @@ class contextStyle extends HTMLElement {
     
 }
 
-customElements.define('context-style', contextStyle);
+window.customElements.define('context-style', ContextStyle);
 
 // matchContext function to instantiate ContextQueryList Object with -- let varname = window.matchContext("(touch)") -- 
 window.matchContext = function(expression) {
-    var o = new ContextQueryList(expression, false);
+    let o = new ContextQueryList(expression, false);
     console.log(o);                              
     return o;
 }
