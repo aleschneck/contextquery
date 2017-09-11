@@ -907,13 +907,11 @@ $__System.register('6', [], function (_export, _context) {
              * 
              */
             class ContextQuery {
-                constructor(query, host) {
+                constructor(query) {
                     // 'Private'
                     this._onchange = null;
                     this._listeners = {};
-                    this._host = host;
                     this._queries = this._breakQueriesDown(query);
-                    this._class = host ? 'css-ctx-queries-' + (+new Date()).toString(36) : undefined;
                     this._intervalID = undefined;
                     // 'Public'
                     this.context = query;
@@ -954,17 +952,6 @@ $__System.register('6', [], function (_export, _context) {
                         }
                     }
                     this._determineMatch();
-                    if (this._host != false) {
-                        if (this.matches) {
-                            if (!this._host.classList.contains(this._class)) {
-                                this._host.classList.add(this._class);
-                            }
-                        } else {
-                            if (this._host.classList.contains(this._class)) {
-                                this._host.classList.remove(this._class);
-                            }
-                        }
-                    }
                 }
 
                 /**   
@@ -1300,10 +1287,8 @@ $__System.register('6', [], function (_export, _context) {
             _export('default', ContextQuery);
 
             // matchContext function to instantiate ContextQueryList Object with -- let varname = window.matchContext("(touch)") -- 
-            window.matchContext = function (expression, host = false) {
-                let o = new ContextQuery(expression, host);
-                console.log(o);
-                return o;
+            window.matchContext = function (expression) {
+                return new ContextQuery(expression);
             };
         }
     };
@@ -1343,9 +1328,11 @@ $__System.register('7', [], function (_export, _context) {
                         if (this._contextQueryObjectList[i]._intervalID != undefined) {
                             clearInterval(this._contextQueryObjectList[i]._intervalID);
                         }
-                        this._host.classList.remove(this._contextQueryObjectList[i]._class);
                         this._contextQueryObjectList[i] = null;
                         delete this._contextQueryObjectList[i];
+                    }
+                    for (let j of this._arrayOfQueries) {
+                        this._host.classList.remove(j.class);
                     }
                     this._contextQueryObjectList.length = 0;
                     //console.log(this._contextQueryObjectList);
@@ -1412,9 +1399,28 @@ $__System.register('7', [], function (_export, _context) {
                 instantiateContextQueryObjects(str, attr) {
                     this.factoriseContextQueries(str, attr);
                     for (let contextQuery of this._arrayOfQueries) {
+                        // Generate unique class;
+                        const cssClass = 'css-ctx-queries-' + (+new Date()).toString(36);
+                        contextQuery.class = cssClass;
                         // Instantiate Object with new constructor
-                        let cqo = window.matchContext(contextQuery.expression, this._host),
+                        let cqo = window.matchContext(contextQuery.expression),
                             css = "";
+                        cqo.onchange = e => {
+                            if (e != undefined) {
+                                console.log(e);
+                            }
+                            if (cqo.matches) {
+                                if (!this._host.classList.contains(cssClass)) {
+                                    this._host.classList.add(cssClass);
+                                }
+                            } else {
+                                if (this._host.classList.contains(cssClass)) {
+                                    this._host.classList.remove(cssClass);
+                                }
+                            }
+                        };
+                        cqo.onchange();
+
                         this._contextQueryObjectList.push(cqo);
 
                         for (let style of contextQuery.styles) {
@@ -1422,18 +1428,18 @@ $__System.register('7', [], function (_export, _context) {
                             if (this._host.shadowRoot != undefined) {
                                 if (!this._host.shadowRoot.querySelector('slot')) {
                                     if (key == ':host') {
-                                        css += ':host(.' + cqo._class + ') ' + '{' + style.properties + '}';
+                                        css += ':host(.' + cssClass + ') ' + '{' + style.properties + '}';
                                     } else {
-                                        css += ':host(.' + cqo._class + ') ' + key.replace('&gt;', '>') + '{' + style.properties + '}';
+                                        css += ':host(.' + cssClass + ') ' + key.replace('&gt;', '>') + '{' + style.properties + '}';
                                     }
                                 } else {
-                                    css += '.' + cqo._class + ' ' + this._host.localName + ' ' + key.replace('&gt;', '>') + '{' + style.properties + '}';
+                                    css += '.' + cssClass + ' ' + this._host.localName + ' ' + key.replace('&gt;', '>') + '{' + style.properties + '}';
                                 }
                             } else {
                                 if (key === 'html') {
-                                    css += key + '.' + cqo._class + '{' + style.properties + '}';
+                                    css += key + '.' + cssClass + '{' + style.properties + '}';
                                 } else {
-                                    css += '.' + cqo._class + ' ' + key.replace('&gt;', '>') + '{' + style.properties + '}';
+                                    css += '.' + cssClass + ' ' + key.replace('&gt;', '>') + '{' + style.properties + '}';
                                 }
                             }
                         }

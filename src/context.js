@@ -24,14 +24,12 @@ window.contextFeatures = [
     console.log(window.contextFeatures);
 })();
 
-class ContextQueryList {
-    constructor(query, host) {
+class ContextQuery {
+    constructor(query) {
         // 'Private'
         this._onchange = null;
-        this._listeners = {}; 
-        this._host = host;
+        this._listeners = {};
         this._queries = this._breakQueriesDown(query);
-        this._class = (host)?'css-ctx-queries-' + (+new Date).toString(36):undefined;
         this._intervalID = undefined;
         // 'Public'
         this.context = query;
@@ -72,17 +70,6 @@ class ContextQueryList {
             }
         }
         this._determineMatch();
-        if(this._host != false) {     
-            if( this.matches ) {
-                if(!this._host.classList.contains(this._class)){                   
-                    this._host.classList.add(this._class);
-                }       
-            } else  {
-                if(this._host.classList.contains(this._class)) {         
-                    this._host.classList.remove(this._class);
-                }             
-            }
-        }
     }
 
     /**   
@@ -431,9 +418,11 @@ class ContextStyle extends HTMLElement {
             if(this._contextQueryObjectList[i]._intervalID != undefined) {
                 clearInterval(this._contextQueryObjectList[i]._intervalID);
             }
-            this._host.classList.remove(this._contextQueryObjectList[i]._class);
             this._contextQueryObjectList[i] = null;
             delete this._contextQueryObjectList[i];
+        }
+        for(let j of this._arrayOfQueries) {
+            this._host.classList.remove(j.class);
         }
         this._contextQueryObjectList.length = 0;
         //console.log(this._contextQueryObjectList);
@@ -502,8 +491,27 @@ class ContextStyle extends HTMLElement {
     instantiateContextQueryObjects(str,attr) {
         this.factoriseContextQueries(str,attr);
         for(let contextQuery of this._arrayOfQueries) {
+            // Generate unique class;
+            const cssClass = 'css-ctx-queries-' + (+new Date).toString(36);
+            contextQuery.class = cssClass;
             // Instantiate Object with new constructor
-            let cqo = window.matchContext(contextQuery.expression, this._host), css = "";
+            let cqo = window.matchContext(contextQuery.expression), css = "";
+            cqo.onchange = (e) => {
+                if(typeof e != undefined) {
+                    console.log(e);
+                }
+                if( cqo.matches ) {
+                    if(!this._host.classList.contains(cssClass)){                   
+                        this._host.classList.add(cssClass);
+                    }       
+                } else  {
+                    if(this._host.classList.contains(cssClass)) {         
+                        this._host.classList.remove(cssClass);
+                    }             
+                }
+            }
+            cqo.onchange();
+
             this._contextQueryObjectList.push(cqo);
             
             for(let style of contextQuery.styles) {
@@ -511,18 +519,18 @@ class ContextStyle extends HTMLElement {
                 if(this._host.shadowRoot != undefined) {
                     if(!this._host.shadowRoot.querySelector('slot')) {
                         if(key == ':host') {
-                            css += ':host(.' + cqo._class + ') ' + '{' + style.properties + '}'; 
+                            css += ':host(.' + cssClass + ') ' + '{' + style.properties + '}'; 
                         } else {
-                            css += ':host(.' + cqo._class + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';                            
+                            css += ':host(.' + cssClass + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';                            
                         }
                     } else {
-                        css += '.' + cqo._class + ' ' + this._host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
+                        css += '.' + cssClass + ' ' + this._host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
                     }
                 } else {
                     if(key === 'html') {
-                        css += key +  '.' + cqo._class + '{' + style.properties + '}';
+                        css += key +  '.' + cssClass + '{' + style.properties + '}';
                     } else {
-                        css += '.' + cqo._class + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}';
+                        css += '.' + cssClass + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}';
                     }
                 }  
             }
@@ -536,7 +544,6 @@ class ContextStyle extends HTMLElement {
                 this._head.appendChild(style);
             }
         }
-        console.log(this._contextQueryObjectList);
     }
 
     /**
@@ -621,10 +628,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // matchContext function to instantiate ContextQueryList Object with -- let varname = window.matchContext("(touch)") -- 
-window.matchContext = function(expression, host = false) {
-    let o = new ContextQueryList(expression, host);
-    console.log(o);                     
-    return o;
+window.matchContext = function(expression) {                   
+    return new ContextQuery(expression);
 }
 
 /* 
