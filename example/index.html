@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="text/javascript" src="js/webcomponents-hi-sd-ce.js"></script>
     <script src="js/awc-core.js"></script>
-    <link rel="import" href="html/context.min.html"> 
-    <!--<script src="html/context.min.js" defer></script>-->
+    <!--<link rel="import" href="html/context.min.html">-->
+    <!--<script src="html/context.min.js"></script>-->
     
     
   
@@ -257,7 +257,7 @@
 </head>
 <body class="body">
         <template id="graphic">
-            <context-style context="(15 < devicelight)">                         
+            <context-style context="(devicelight < 10)">                         
                 :host {
                     border: 1px solid red;
                     background-color: white;
@@ -273,6 +273,12 @@
             <canvas></canvas>
         </template>
         <template id="text">
+                <context-style context="(devicelight < 10)">                         
+                    :host {
+                        border: 1px solid red;
+                        background-color: white;
+                    }
+                </context-style>
             <style>
                 :host {
                     display: block;
@@ -296,7 +302,7 @@
                     document.volatileprofile = new awc.ProfileStore(true, wrap);
                     let dms = [{'display-mode': 'text'},  {'display-mode': 'graphic'}];
                     
-                    let dllt10 = window.matchContext('(devicelight < 10)');
+                    let dllt10 = window.matchContext('(devicelight < 15)');
              
                     dllt10.onchange = function(e) {
                         console.log(e);

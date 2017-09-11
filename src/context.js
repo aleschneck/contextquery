@@ -25,12 +25,11 @@ window.contextFeatures = [
 })();
 
 class ContextQueryList {
-    constructor(query, host, selectors = '') {
+    constructor(query, host) {
         // 'Private'
         this._onchange = null;
         this._listeners = {}; 
-        this._host = host; 
-        this._selectors = selectors;
+        this._host = host;
         this._queries = this._breakQueriesDown(query);
         this._class = (host)?'css-ctx-queries-' + (+new Date).toString(36):undefined;
         this._intervalID = undefined;
@@ -46,6 +45,7 @@ class ContextQueryList {
             let normalised = e.value / 10; // normalise range from 0 to 100, max value on nexus 4 is 1000
             this._performContextCheck('devicelight',Math.round(normalised));
         });
+        this._performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);
         this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
         this._intervalID = setInterval(() => {
             this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
@@ -409,7 +409,7 @@ class ContextStyle extends HTMLElement {
 
     constructor() {
         super();
-        this.arrayOfQueries = [];
+        this._arrayOfQueries = [];
         this._host = document.querySelector("html");
         this._head = document.querySelector('head');
         this._contextQueryObjectList = [];
@@ -501,22 +501,22 @@ class ContextStyle extends HTMLElement {
 
     instantiateContextQueryObjects(str,attr) {
         this.factoriseContextQueries(str,attr);
-        for(let contextQuery of this.arrayOfQueries) {
+        for(let contextQuery of this._arrayOfQueries) {
             // Instantiate Object with new constructor
-            let cqo = new ContextQueryList(contextQuery.expression, this._host, contextQuery.styles), css = "";
+            let cqo = window.matchContext(contextQuery.expression, this._host), css = "";
             this._contextQueryObjectList.push(cqo);
             
-            for(let style of cqo._selectors) {
+            for(let style of contextQuery.styles) {
                 let key = style.selector;
-                if(cqo._host.shadowRoot != undefined) {
-                    if(!cqo._host.shadowRoot.querySelector('slot')) {
+                if(this._host.shadowRoot != undefined) {
+                    if(!this._host.shadowRoot.querySelector('slot')) {
                         if(key == ':host') {
                             css += ':host(.' + cqo._class + ') ' + '{' + style.properties + '}'; 
                         } else {
                             css += ':host(.' + cqo._class + ') ' + key.replace('&gt;','>') + '{' + style.properties + '}';                            
                         }
                     } else {
-                        css += '.' + cqo._class + ' ' + cqo._host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
+                        css += '.' + cqo._class + ' ' + this._host.localName + ' ' + key.replace('&gt;','>') + '{' + style.properties + '}'; 
                     }
                 } else {
                     if(key === 'html') {
@@ -569,15 +569,15 @@ class ContextStyle extends HTMLElement {
             let sbstrng = str.substring(str.indexOf("@context"), this.findClosingBracket('{}',str) + 1);
             let str2 = str.replace(sbstrng,'');
             str2 = str2.trim();
-            this.arrayOfQueries.push(sbstrng);
+            this._arrayOfQueries.push(sbstrng);
             this.factoriseContextQueries(str2, attr);
         } else {
-            // push the query from the context attribute into arrayOfQueries
+            // push the query from the context attribute into _arrayOfQueries
             if(attr != false) {
-                this.arrayOfQueries.push('@context '+ attr +' {'+ str + '}');
+                this._arrayOfQueries.push('@context '+ attr +' {'+ str + '}');
             }
             let newArrayOfQueries = [];
-            for (let elm of this.arrayOfQueries) {
+            for (let elm of this._arrayOfQueries) {
                 let expression = elm.substring(8, elm.indexOf('{'));
                 let styles = elm.substring(elm.indexOf('{') + 1,elm.lastIndexOf('}'));
                 let arrayOfSelectors = [], singleStyles = styles.split(/\s*}\s*/);
@@ -597,18 +597,18 @@ class ContextStyle extends HTMLElement {
                 newArrayOfQueries.push({expression:expression.trim(),styles:arrayOfSelectors});  
             }
             
-            // factorise all objects in arrayOfQueries only if there's a global query and more than one query in total 
+            // factorise all objects in _arrayOfQueries only if there's a global query and more than one query in total 
             if(attr != false) {
                 let globalQuery = newArrayOfQueries[newArrayOfQueries.length - 1].expression;
                 for(let i = 0; i < newArrayOfQueries.length - 1; i++) {
                     newArrayOfQueries[i].expression += ' and ' + globalQuery;
                 }
             }
-            this.arrayOfQueries = [];
+            this._arrayOfQueries = [];
             // reorganise arrayOfQueries
             for (let i of newArrayOfQueries) {
                 if(i.styles.length > 0) {
-                    this.arrayOfQueries.push(i);
+                    this._arrayOfQueries.push(i);
                 }
             }
         }      
@@ -616,12 +616,14 @@ class ContextStyle extends HTMLElement {
     
 }
 
-window.customElements.define('context-style', ContextStyle);
+document.addEventListener('DOMContentLoaded', function () {
+    window.customElements.define('context-style', ContextStyle);
+});
 
 // matchContext function to instantiate ContextQueryList Object with -- let varname = window.matchContext("(touch)") -- 
-window.matchContext = function(expression) {
-    let o = new ContextQueryList(expression, false);
-    console.log(o);                              
+window.matchContext = function(expression, host = false) {
+    let o = new ContextQueryList(expression, host);
+    console.log(o);                     
     return o;
 }
 
