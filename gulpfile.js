@@ -1,22 +1,25 @@
-var gulp = require('gulp');
-var htmlmin = require('gulp-htmlmin');
-var uglifyjs = require('uglify-es');
-var composer = require('gulp-uglify/composer');
-var minifier = composer(uglifyjs, console); //require('gulp-uglify/minifier');
-var rename = require("gulp-rename");
-var pump = require('pump');
+const gulp = require('gulp');
+const htmlmin = require('gulp-htmlmin');
+const uglifyjs = require('uglify-es');
+const composer = require('gulp-uglify/composer');
+const minifier = composer(uglifyjs, console); //require('gulp-uglify/minifier');
+const rename = require("gulp-rename");
+const pump = require('pump');
+const jsBuilder = require('gulp-systemjs-builder');
  
 gulp.task('compress', function (cb) {
-    var options = {
+    let options = {
         preserveComments: 'license'
     };
 
   pump([
-        gulp.src('src/*.js'),
-        minifier({}),
+        gulp.src('dist/*.js'),
+        minifier({
+          mangle: false
+        }),
         rename({ suffix: '.min' }),
-        gulp.dest('dist'),
-        gulp.dest('example/html')
+        gulp.dest('dist/min'),
+        gulp.dest('example/js')
     ],
     cb
   );
@@ -29,4 +32,25 @@ gulp.task('minify', function() {
     .pipe(rename({ suffix: '.min' }))
     .pipe(gulp.dest('dist'))
     .pipe(gulp.dest('example/html'));
+});
+
+gulp.task('build', () => {
+	let builder = jsBuilder('./src');
+	builder.config({
+		transpiler: 'plugin-babel',
+		paths: {
+			"node:*": "./node_modules/*"
+		},
+		map: {
+ 			'plugin-babel': 'node:systemjs-plugin-babel/plugin-babel.js',
+			'systemjs-babel-build': 'node:systemjs-plugin-babel/systemjs-babel-browser.js'
+		},
+		meta: {
+			'*.js': {
+				babelOptions: {es2015: false}
+			}
+		}
+	});
+	return builder.buildStatic('./src/context.js', 'context.js', {globalName: 'cq'})
+    .pipe(gulp.dest('./dist'));
 });

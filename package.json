@@ -10,6 +10,9 @@
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^3.0.0",
     "pump": "^1.0.2",
-    "uglify-es": "^3.0.28"
+    "uglify-es": "^3.0.28",
+    "gulp-systemjs-builder": "^0.15.0",
+    "systemjs": "^0.19.42",
+    "systemjs-plugin-babel": "0.0.19"
   }
 }
