@@ -235,29 +235,3 @@ export default class ContextStyle extends HTMLElement {
 document.addEventListener('DOMContentLoaded', function () {
     window.customElements.define('context-style', ContextStyle);
 });
-
-// new features structure
-window.contextFeatures = [
-    { name: 'devicelight', value: null, callback: null },
-    { name: 'devicemotion', value: null, callback: null },
-    { name: 'deviceproximity', value: null, callback: null },
-    { name: 'touch', value: null, callback: function() { return ('ontouchstart' in window || navigator.maxTouchPoints)?true:false } },
-    { name: 'time', value: null, callback: function() { return true }},
-    { name: 'battery', value: null, callback: function() { return (navigator.getBattery)?true:false }},
-    { name: 'charging-battery', value: null, callback: function() { return (navigator.getBattery)?true:false }}
-];
-
-(function () {
-    for(let feature of window.contextFeatures) {
-        if(feature.callback == null) {
-            if('on' + feature.name in window) {
-                feature.supported = true;
-            } else {
-                feature.supported = false;
-            }
-        } else {
-            feature.supported = feature.callback();
-        }    
-    }
-    console.log(window.contextFeatures);
-})();

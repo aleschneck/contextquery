@@ -69,7 +69,7 @@
             display: block;
         }
     </style>
-    <context-style context="(devicelight < 10)">          
+    <context-style context="(5 < light-intensity <= 15)">          
         body { background-color: black; color: white; }  
         .code .rule {
             color: mediumpurple;
@@ -254,7 +254,7 @@
 </head>
 <body class="body">
         <template id="graphic">
-            <context-style context="(devicelight < 10)">                         
+            <context-style context="(light-intensity < 10)">                         
                 :host {
                     border: 2px solid purple;
                     background-color: white;
@@ -270,7 +270,7 @@
             <canvas></canvas>
         </template>
         <template id="text">
-                <context-style context="(devicelight < 10)">                         
+                <context-style context="(light-intensity < 10)">                         
                     :host {
                         border: 1px solid red;
                         background-color: white;
@@ -299,7 +299,7 @@
                     document.volatileprofile = new awc.ProfileStore(true, wrap);
                     let dms = [{'display-mode': 'text'},  {'display-mode': 'graphic'}];
                     
-                    let dllt10 = window.matchContext('(devicelight < 15)');
+                    let dllt10 = window.matchContext('(light-intensity < 10)');
              
                     dllt10.onchange = function(e) {
                         console.log(e);
@@ -326,12 +326,12 @@
 <footer class="fix-bottom">
     <div class="container">
         <div class="inner">
-            <label for="in">device light</label>
+            <label for="in">light-intensity</label>
             <input type="range" id="in" name="in" value="0">
             <input type="range" id="motion" name="motion" value="0" style="display: none;">
             <div class="code">
                 <code>
-                    <span class="rule">@context</span> (<span class="value">10</span> &lt; <span class="feat">devicelight</span> &lt;= <span class="value">30</span>) { <br>
+                    <span class="rule">@context</span> (<span class="value">5</span> &lt; <span class="feat">light-intensity</span> &lt;= <span class="value">15</span>) { <br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="selector">body</span> { <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">background-color</span>:<span class="stringval"> black</span>;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">color</span>:<span class="stringval"> white</span>; <br>
