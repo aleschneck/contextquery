@@ -53,8 +53,10 @@ export default class ContextQuery {
                     });
                 }
                 if(this.context.includes('battery')) { 
-                    this._performContextCheck('battery', battery.level * 100 );          
+                    this._performContextCheck('battery', battery.level * 100 ); 
+                    console.log('level change ' + battery.level);         
                     battery.addEventListener('levelchange', () => {
+                        console.log('level change ' + battery.level);
                         this._performContextCheck('battery', battery.level * 100 );
                     });
                 }
@@ -165,9 +167,9 @@ export default class ContextQuery {
         /**
          * @param {array} arr
          * @param {string} symbol
-         * @param {array} indc
          */
-        function mixedSigns(arr,symbol,indc) {
+        function mixedSigns(arr,symbol) {
+            let indec = {left:false,right:false};
             if (arr.length == 2) {
                 let left = false, tmpArr, tmpStr;
                 for (let idx in arr) {            
@@ -186,31 +188,32 @@ export default class ContextQuery {
                     if (left) {
                         arr.unshift(tmpArr[1]);
                         arr.unshift(tmpArr[0]);
-                        if( symbol === '&lt;') {
-                            indc.left = true;
+                        if( symbol === '<') {
+                            indec.left = true;
                         } else {
-                            indc.right = true;
+                            indec.right = true;
                         }
                         
                     } else {
                         arr.push(tmpArr[0]);
                         arr.push(tmpArr[1]);
-                        if( symbol === '&lt;') {
-                            indc.right = true;
+                        if( symbol === '<') {
+                            indec.right = true;
                         } else {
-                            indc.left = true;
+                            indec.left = true;
                         }
                     }
-                }          
-                //console.log(arr);
+                }
             }
+            return indec;
         }
+
         let arrayOfContexts = [], or = /\s*,\s*|\s*or\s*/i, orArr = context.split(or), lt = '<', gt = '>', lteq = '<=', gteq = '>=';
         for (let y of orArr) {
             let contextRuleObj = { contexts: [] },  arrOfObj = [];
             let andArr = y.split(/\s*and\s*/i);
             for (let j of andArr) {
-                let sr = j.substring(j.indexOf("(")+1,j.indexOf(")")), ra, prcnt = '%', obj = {}, objName, incdec = {left:false,right:false};
+                let sr = j.substring(j.indexOf("(")+1,j.indexOf(")")), ra, prcnt = '%', obj = {}, objName, incdec;
                 if( j.includes(lt) || j.includes(gt) ) {               
                     if (sr.includes(lt) && sr.includes(gt)) {
                         console.error('you have mixed the greater than and less than symbol in an expression!');
@@ -220,7 +223,7 @@ export default class ContextQuery {
                     if (sr.includes(lt)) {
                         if (sr.includes(lteq)) {
                             ra = sr.split(lteq);
-                            mixedSigns(ra,lt,incdec);
+                            incdec = mixedSigns(ra,lt);
                         } else {
                             ra = sr.split(lt);
                             incdec = {left:true,right:true};   	
@@ -247,7 +250,7 @@ export default class ContextQuery {
                     if (sr.includes(gt)) {
                         if (sr.includes(gteq)) {
                             ra = sr.split(gteq);
-                            mixedSigns(ra,gt,incdec);
+                            incdec = mixedSigns(ra,gt);
                         } else {
                             ra = sr.split(gt);
                             incdec = {left:true,right:true};
@@ -335,7 +338,7 @@ export default class ContextQuery {
         let b = false;
         for (let j of this._queries) {
             let b2 = true;
-            for(let k of j){                 
+            for(let k of j){             
                 let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
                 for(let feature of window.contextFeatures ){
                     if(feature.name === k.feature) {
