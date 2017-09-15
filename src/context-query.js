@@ -25,12 +25,12 @@ export default class ContextQuery {
         if(this.context.includes('touch')) { 
             this._performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);
         }
-        //if(this.context.includes('time')) {
+        if(this.context.includes('time')) {
             this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
             this._intervalID = setInterval(() => {
                 this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
             },1000);
-        //}
+        }
 
         let acceleration = 0;
         if(this.context.includes('motion-speed')){           
@@ -53,10 +53,8 @@ export default class ContextQuery {
                     });
                 }
                 if(this.context.includes('battery')) { 
-                    this._performContextCheck('battery', battery.level * 100 ); 
-                    console.log('level change ' + battery.level);         
+                    this._performContextCheck('battery', battery.level * 100 );     
                     battery.addEventListener('levelchange', () => {
-                        console.log('level change ' + battery.level);
                         this._performContextCheck('battery', battery.level * 100 );
                     });
                 }
@@ -165,11 +163,11 @@ export default class ContextQuery {
      */
     _breakQueriesDown(context) {
         /**
-         * @param {array} arr
-         * @param {string} symbol
+         * @param {array} arr the resulting array after having splitted the query using <= or >=
+         * @param {string} symbol the character to look up for in the passed array, either < or >
          */
         function mixedSigns(arr,symbol) {
-            let indec = {left:false,right:false};
+            let o = {left:false,right:false};
             if (arr.length == 2) {
                 let left = false, tmpArr, tmpStr;
                 for (let idx in arr) {            
@@ -189,23 +187,23 @@ export default class ContextQuery {
                         arr.unshift(tmpArr[1]);
                         arr.unshift(tmpArr[0]);
                         if( symbol === '<') {
-                            indec.left = true;
+                            o.left = true;
                         } else {
-                            indec.right = true;
+                            o.right = true;
                         }
                         
                     } else {
                         arr.push(tmpArr[0]);
                         arr.push(tmpArr[1]);
                         if( symbol === '<') {
-                            indec.right = true;
+                            o.right = true;
                         } else {
-                            indec.left = true;
+                            o.left = true;
                         }
                     }
                 }
             }
-            return indec;
+            return o;
         }
 
         let arrayOfContexts = [], or = /\s*,\s*|\s*or\s*/i, orArr = context.split(or), lt = '<', gt = '>', lteq = '<=', gteq = '>=';

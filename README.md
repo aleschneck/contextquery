@@ -5,14 +5,14 @@ Context-Style is a HTML custom element that allows developers to write context d
 
 #### Supported features:
 
-`devicelight` and `devicemotion`
+`light-intensity`, `time`, `battery`, `charging-battery`
 
 
 #### Usage
 
-Import the minified file in the Head Tag
+place the minified javascript file in the Head Tag
 
-`<link rel="import" href="context.min.html">`
+`<script src="js/context.min.js"></script>`
 
 Web Components need a Polyfill depending on the browser, include the polyfill before ypu import the custom context element, see more on [https://github.com/webcomponents](https://github.com/webcomponents "Webcomponents")
 
@@ -25,7 +25,7 @@ Write your styles using the @context rule on a separate css file and link them w
 or directly in the custom element, you can use "min-" and "max-" prefixes or range contexts, see more on [Evaluating Media Features](https://www.w3.org/TR/mediaqueries-4/#mq-range-context "Media Queries Level 4")
 
     <context-style>
-        @context (30% <= devicelight <= 70%) {
+        @context (30 <= light-intensity <= 70) {
             body { background-color: #eee}
             .class { background-color: #666; color: red }
         }
