@@ -6,15 +6,11 @@ export default class ContextQuery {
         // 'Private'
         this._onchange = null;
         this._listeners = {};
-        this._queries = undefined;
-        this._queriesExpanded = {};
-        this._intervalID = {};
-        // 
-        this._breakQueriesDown(query);
+        this._queries = this._breakQueriesDown(query);
+        this._intervalID = {};       
         // 'Public'
         this.context = query;
         this.matches = this._determineMatch();
-        
         // attach event listeners
         this._registerListeners();
     }
@@ -246,232 +242,209 @@ export default class ContextQuery {
                 q = context.substring(context.indexOf('(') + 1, findClosingBracket(context.indexOf('('),context));
                 context = context.replace('('+q+')','');
             }
+
+            q = q.trim();
                   
             if(q !== ''){
-                if( q.trim() == 'or' || q.trim() == 'and') {
-                    obj.operator = q.trim();
-                } else {
-                    obj.queries.push(q.trim());
+                if( q == 'or' || q == 'and') {
+                    obj.operator = q;
+                } else { 
+                    if(!q.includes('and') && !q.includes('or') ) {
+                        let ra, prcnt = '%', objct = { context: q }, objName, incdec, lt = '<', gt = '>', lteq = '<=', gteq = '>=';
+                        if( objct.context.includes(lt) || objct.context.includes(gt) ) {               
+                            if (objct.context.includes(lt) && objct.context.includes(gt)) {
+                                console.error('you have mixed the greater than and less than symbol in an expression!');
+                                return;
+                            }
+                            if (objct.context.includes(lt)) {
+                                if (objct.context.includes(lteq)) {
+                                    ra = objct.context.split(lteq);
+                                    incdec = mixedSigns(ra,lt);
+                                } else {
+                                    ra = objct.context.split(lt);
+                                    incdec = {left:true,right:true};   	
+                                }  
+                                if(ra.length == 2) {
+                                    if(ra[0].includes(prcnt) || !isNaN(ra[0])) {
+                                        objct.min = parseFloat(ra[0]); 
+                                        objct.feature = ra[1].trim();
+                                    } else {
+                                        objct.max = parseFloat(ra[1]); 
+                                        objct.feature = ra[0].trim();                                
+                                    }
+                                } else {
+                                    objct.feature = ra[1].trim();
+                                    objct.min = parseFloat(ra[0]);
+                                    objct.max = parseFloat(ra[2]);
+                                }
+                                
+                                if( incdec.left || incdec.right ) {
+                                    objct.lt_gt = incdec;
+                                }
+                                q = {};                 
+                                q = objct;
+                            }
+                            if (objct.context.includes(gt)) {
+                                if (objct.context.includes(gteq)) {
+                                    ra = objct.context.split(gteq);
+                                    incdec = mixedSigns(ra,gt);
+                                } else {
+                                    ra = objct.context.split(gt);
+                                    incdec = {left:true,right:true};
+                                } 
+                                if(ra.length == 2) {
+                                    if(ra[0].includes(prcnt) || !isNaN(ra[0])) {
+                                        objct.max = parseFloat(ra[0]);
+                                        objct.feature = ra[1].trim();
+                                    } else {
+                                        objct.min = parseFloat(ra[1]);
+                                        objct.feature = ra[0].trim();
+                                    }
+                                    
+                                } else {
+                                    objct.feature = ra[1].trim();
+                                    objct.max = parseFloat(ra[0]);
+                                    objct.min = parseFloat(ra[2]);
+                                }
+                                if( incdec.left || incdec.right ) {
+                                    objct.lt_gt = incdec;
+                                }
+                                q = {};                 
+                                q = objct;
+                                
+                            }
+                        } else if( objct.context.includes(':')) {                
+                            let a, objVal;          
+                            a = objct.context.split(/\s*:\s*/);
+                            objName = a[0].trim();
+                            objct.feature = objName;
+                            objVal = parseFloat(a[1]);
+                            
+                            if( objName.includes('min-') || objName.includes('max-')) {
+                                objName = objName.replace('min-','');
+                                objName = objName.replace('max-','');
+                                objct.feature = objName;
+                                if(a[0].includes('min-')) {
+                                    objct.min = objVal;
+                                }
+                                if(a[0].includes('max-')) {
+                                    objct.max = objVal;
+                                }
+                                q = {};                 
+                                q = objct;
+                                 
+                            } else {
+                                objct.abs = objVal;
+                                q = {};                 
+                                q = objct;
+                            }
+                        } else {
+                            if(objct.context) {
+                                objct.feature = objct.context;
+                                objct.abs = true;
+                                q = {};             
+                                q = objct;
+                            }  
+                        }
+                    }
+                    obj.queries.push(q);
                 }
                 findQueriesRecursively(obj,context);
             } else {
                 for(let i in obj.queries){
-                    if(obj.queries[i].includes('and') || obj.queries[i].includes('or')){
+                    if(typeof obj.queries[i] === 'string') {
                         context = obj.queries[i];
                         obj.queries[i] = {queries: []};
                         findQueriesRecursively(obj.queries[i],context);
-                    }
+                    }       
                 }
             }
         }
 
         findQueriesRecursively(newCtxArr,context.trim());
-        this._queries = newCtxArr;
-        
-        
-        function expandQueries(o) {
-            for(let i in o.queries) {
-                if(typeof o.queries[i] === 'object'){
-                    expandQueries(o.queries[i]);
-                } else {
-                    let q = o.queries[i], ra, prcnt = '%', obj = {}, objName, incdec, lt = '<', gt = '>', lteq = '<=', gteq = '>=';
-                    if( q.includes(lt) || q.includes(gt) ) {               
-                        if (q.includes(lt) && q.includes(gt)) {
-                            console.error('you have mixed the greater than and less than symbol in an expression!');
-                            return;
-                        }
-                    
-                        if (q.includes(lt)) {
-                            if (q.includes(lteq)) {
-                                ra = q.split(lteq);
-                                incdec = mixedSigns(ra,lt);
-                            } else {
-                                ra = q.split(lt);
-                                incdec = {left:true,right:true};   	
-                            }  
-                            if(ra.length == 2) {
-                                if(ra[0].includes(prcnt) || !isNaN(ra[0])) {
-                                    obj.min = parseFloat(ra[0]); 
-                                    obj.feature = ra[1].trim();
-                                } else {
-                                    obj.max = parseFloat(ra[1]); 
-                                    obj.feature = ra[0].trim();                                
-                                }
-                            } else {
-                                obj.feature = ra[1].trim();
-                                obj.min = parseFloat(ra[0]);
-                                obj.max = parseFloat(ra[2]);
-                            }
-                            
-                            if( incdec.left || incdec.right ) {
-                                obj.lt_gt = incdec;
-                            }
-                            o.queries[i] = {};                 
-                            o.queries[i] = obj;
-                        }
-                        if (q.includes(gt)) {
-                            if (q.includes(gteq)) {
-                                ra = q.split(gteq);
-                                incdec = mixedSigns(ra,gt);
-                            } else {
-                                ra = q.split(gt);
-                                incdec = {left:true,right:true};
-                            } 
-                            if(ra.length == 2) {
-                                if(ra[0].includes(prcnt) || !isNaN(ra[0])) {
-                                    obj.max = parseFloat(ra[0]);
-                                    obj.feature = ra[1].trim();
-                                } else {
-                                    obj.min = parseFloat(ra[1]);
-                                    obj.feature = ra[0].trim();
-                                }
-                                
-                            } else {
-                                obj.feature = ra[1].trim();
-                                obj.max = parseFloat(ra[0]);
-                                obj.min = parseFloat(ra[2]);
-                            }
-                            if( incdec.left || incdec.right ) {
-                                obj.lt_gt = incdec;
-                            }
-                            o.queries[i] = {};                 
-                            o.queries[i] = obj;
-                            
-                        }
-                    } else if( q.includes(':')) {                
-                        let a, objVal;          
-                        a = q.split(/\s*:\s*/);
-                        objName = a[0].trim();
-                        obj.feature = objName;
-                        objVal = parseFloat(a[1]);
-                        
-                        if( objName.includes('min-') || objName.includes('max-')) {
-                            objName = objName.replace('min-','');
-                            objName = objName.replace('max-','');
-                            obj.feature = objName;
-                            if(arrOfObj.length == 0) {
-                                if(a[0].includes('min-')) {
-                                    obj.min = objVal;
-                                }
-                                if(a[0].includes('max-')) {
-                                    obj.max = objVal;
-                                }
-                                o.queries[i] = {};                 
-                                o.queries[i] = obj;
-                            } else {
-                                for(let i of arrOfObj) {
-                                    if(i.feature != obj.feature) {
-                            
-                                        if(a[0].includes('min-')) {
-                                            obj.min = objVal;
-                                        }
-                                        if(a[0].includes('max-')) {
-                                            obj.max = objVal;
-                                        }
-                                        arrOfObj.push(obj);
-                                    } else {
-                                        if(a[0].includes('min-')) {
-                                            i.min = objVal;
-                                        }
-                                        if(a[0].includes('max-')) {
-                                            i.max = objVal;
-                                        } 
-                                    }
-                                }
-                            } 
-                        } else {
-                            obj.abs = objVal;
-                            o.queries[i] = {};                 
-                            o.queries[i] = obj;
-                        }
-                    } else {
-                        if(o.queries[i]) {
-                            obj.feature = o.queries[i];
-                            obj.abs = true;
-                            o.queries[i] = {};                 
-                            o.queries[i] = obj;
-                        }  
-                    }
-                }
-            }
-            return o;
-        }
-        this._queriesExpanded = expandQueries(JSON.parse(JSON.stringify(newCtxArr)));
+
+        return newCtxArr;
         
     }
 
     _determineMatch() {
-        let b = false; 
-        function determineIftrue(obj) {
-                let b2 = true;
-                for(let q of obj.queries) {
-                    if(q.hasOwnProperty('operator')){
-                        determineIftrue(q);
-                    } else {
-                        let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
-                        for(let feature of window.contextFeatures ){
-                            if(feature.name === q.feature) {
-                                // Compare to values stored in Features object
-                                //if(feature.supported) {
-                                    // has an unique value either numeric or boolean
-                                    if(q.hasOwnProperty('abs')) {
-                                        if(Number.isInteger(q.abs)) {
-                                            if(feature.value != q.abs) {
-                                                b2 = false;
-                                            } 
-                                        } else {
-                                            if(!feature.value) {
-                                                b2 = false;
-                                            }
-                                        }
+        let expr = '';
+        function evaluateQueriesRecursively(obj) {       
+            expr += '(';
+            for(let q of obj.queries) {
+                if(!q.hasOwnProperty('queries')) {      
+                    let connct = '', b1 = true, min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
+                    for(let feature of window.contextFeatures ){
+                        if(feature.name === q.feature) {
+                            // Compare to values stored in Features object
+                            //if(feature.supported) {
+                                // has an unique value either numeric or boolean
+                                if(q.hasOwnProperty('abs')) {
+                                    if(Number.isInteger(q.abs)) {
+                                        if(feature.value != q.abs) {
+                                            b1 = false;
+                                        } 
                                     } else {
-                                        // Value is in range
-                                        if(q.hasOwnProperty('min')) {
-                                            min = q.min;
-                                        }         
-                                        if(q.hasOwnProperty('max')) {
-                                            max = q.max;
-                                        }
-                                        if(q.hasOwnProperty('lt_gt')) {
-                                            if(q.lt_gt.left) {
-                                                ++min;
-                                            } 
-                                            if(q.lt_gt.right) {
-                                                --max;
-                                            }
-                                        }
-                                        if(min != -Infinity || max != Infinity) {                                  
-                                            if ( feature.value < min || max < feature.value) {
-                                                b2 = false;
-                                            }         
+                                        if(!feature.value) {
+                                            b1 = false;
+                                        } 
+                                    }
+                                } else {
+                                    // Value is in range
+                                    if(q.hasOwnProperty('min')) {
+                                        min = q.min;
+                                    }         
+                                    if(q.hasOwnProperty('max')) {
+                                        max = q.max;
+                                    }
+                                    if(q.hasOwnProperty('lt_gt')) {
+                                        if(q.lt_gt.left) {
+                                            ++min;
+                                        } 
+                                        if(q.lt_gt.right) {
+                                            --max;
                                         }
                                     }
-                                //} else {
-                                //    b2 = false;
-                                //}
-                            }  
+                                    if(min != -Infinity || max != Infinity) {                                  
+                                        if ( feature.value < min || max < feature.value) {
+                                            b1 = false;
+                                        }        
+                                    }
+                                }
+                            //} else {
+                            //    b2 = false;
+                            //}
+                        }  
+                    }
+                    if(obj.operator === 'and') {
+                        connct = '&&';
+                    }
+                    if(obj.operator === 'or') {
+                        connct = '||';
+                    }
+                    if(obj.queries.indexOf(q) === 0 ) {
+                        expr += b1;
+                    } else {
+                        expr += ' ' + connct + ' ' + b1;
+                    }
+                    
+                } else {
+                    if(obj.queries.indexOf(q) !== 0 ) {
+                        if(obj.operator === 'and') {
+                            expr += ' && ';
                         }
                         if(obj.operator === 'or') {
-                            // only one condition must be true
-                            if(b2) {
-                                b = true;
-                            }
+                            expr += ' || ';
                         }
-                        if(obj.operator === 'and') {
-                            
-                            if(!b2) {
-                                b = false;
-                            } 
-                        }
-                                 
                     }
+                    evaluateQueriesRecursively(q);
                 }
-            
+            }
+            expr += ')';
         }
 
-
-        determineIftrue(this._queriesExpanded);
-
+        evaluateQueriesRecursively(this._queries);
+        let b = eval(expr);
         if( b != this.matches ) {            
             if(this.matches == undefined) {
                 return b;
@@ -480,72 +453,7 @@ export default class ContextQuery {
                 this.dispatchEvent(new CustomEvent("change", { detail: { matches: b, target: this }}));
             }           
         }
-            
-            
-            
-        /*
-        let b = false;
-        for (let j of this._queries) {
-            let b2 = true;
-            for(let k of j){             
-                let min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
-                for(let feature of window.contextFeatures ){
-                    if(feature.name === k.feature) {
-                        // Compare to values stored in Features object
-                        //if(feature.supported) {
-                            // has an unique value either numeric or boolean
-                            if(k.hasOwnProperty('abs')) {
-                                if(Number.isInteger(k.abs)) {
-                                    if(feature.value != k.abs) {
-                                        b2 = false;
-                                    }
-                                } else {
-                                    if(!feature.value) {
-                                        b2 = false;
-                                    }
-                                }
-                            } else {
-                                // Value is in range
-                                if(k.hasOwnProperty('min')) {
-                                    min = k.min;
-                                }         
-                                if(k.hasOwnProperty('max')) {
-                                    max = k.max;
-                                }
-                                if(k.hasOwnProperty('lt_gt')) {
-                                    if(k.lt_gt.left) {
-                                        ++min;
-                                    } 
-                                    if(k.lt_gt.right) {
-                                        --max;
-                                    }
-                                }
-                                if(min != -Infinity || max != Infinity) {                                  
-                                    if ( feature.value < min || max < feature.value) {
-                                        b2 = false;
-                                    }         
-                                }
-                            }
-                        //} else {
-                        //    b2 = false;
-                        //}
-                    }  
-                }              
-            }
-            if(b2) {
-                b = true;
-            }                                                      
-        }
-        if( b != this.matches ) {            
-            if(this.matches == undefined) {
-                return b;
-            } else {
-                this.matches = b;
-                this.dispatchEvent(new CustomEvent("change", { detail: { matches: b, target: this }}));
-            }
-                    
-        }
-        */
+        
     }
 }
 
