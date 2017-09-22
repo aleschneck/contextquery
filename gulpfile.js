@@ -51,6 +51,7 @@ gulp.task('build', () => {
 			}
 		}
 	});
-	return builder.buildStatic('./src/context.js', 'context.js', {globalName: 'cq'})
+  return builder.buildStatic('./src/context.js', 'context.js', {globalName: 'cq'})
+    .pipe(gulp.dest('./example/js'))
     .pipe(gulp.dest('./dist'));
 });

@@ -101,7 +101,8 @@ export default class ContextStyle extends HTMLElement {
         this.factoriseContextQueries(str,attr);
         for(let contextQuery of this._arrayOfQueries) {
             // Generate unique class;
-            const cssClass = 'css-ctx-queries-' + (+new Date).toString(36);
+            // unary operator in +new Date equivalent to Number(new Date)
+            const cssClass = 'css-ctx-queries-' + (+new Date).toString(36) + this._arrayOfQueries.indexOf(contextQuery);
             contextQuery.class = cssClass;
             // Instantiate Object with new constructor
             let cqo = window.matchContext(contextQuery.expression), css = "";
@@ -216,9 +217,16 @@ export default class ContextStyle extends HTMLElement {
             // factorise all objects in _arrayOfQueries only if there's a global query and more than one query in total 
             if(attr != false) {
                 let globalQuery = newArrayOfQueries[newArrayOfQueries.length - 1].expression;
+                if(globalQuery.includes('or') || globalQuery.includes(',')) {
+                    globalQuery = '(' + globalQuery + ')';
+                }
                 for(let i = 0; i < newArrayOfQueries.length - 1; i++) {
+                    if(newArrayOfQueries[i].expression.includes('or') || newArrayOfQueries[i].expression.includes(',')) {
+                        newArrayOfQueries[i].expression = '(' + newArrayOfQueries[i].expression + ')'; 
+                    } 
                     newArrayOfQueries[i].expression += ' and ' + globalQuery;
                 }
+                
             }
             this._arrayOfQueries = [];
             // reorganise arrayOfQueries
