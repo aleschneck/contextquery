@@ -234,13 +234,14 @@ export default class ContextQuery {
          */
 
         function findQueriesRecursively(obj,context) {
-            let q = '';
-            if(context.indexOf('(') != 0) {
-                q = context.substring(0, context.indexOf('('));
+            let q = '', idx = context.indexOf('(');
+            //context.substring(idx - 3,idx) === 'not' && idx == 3 ) 
+            if(idx != 0) {   
+                q = context.substring(0, idx);
                 context = context.replace(q,'');
-            } else {
-                q = context.substring(context.indexOf('(') + 1, findClosingBracket(context.indexOf('('),context));
-                context = context.replace('('+q+')','');
+            } else  {
+                q = context.substring(idx + 1, findClosingBracket(idx,context));
+                context = context.replace('(' + q + ')','');
             }
 
             q = q.trim();
@@ -368,12 +369,23 @@ export default class ContextQuery {
     }
 
     _determineMatch() {
-        let expr = '';
-        function evaluateQueriesRecursively(obj) {       
-            expr += '(';
+        
+        function evaluateQueriesRecursively(obj) {
+            let tmp, operator;
+
+            if(obj.hasOwnProperty('negate')) {
+                if(obj.operator === 'and') {
+                    operator = 'or';
+                } else if(obj.operator === 'and') {
+                    operator = 'and';
+                }
+            } else {
+                operator = obj.operator;
+            }
+
             for(let q of obj.queries) {
                 if(!q.hasOwnProperty('queries')) {      
-                    let connct = '', b1 = true, min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
+                    let b1 = true, min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY; 
                     for(let feature of window.contextFeatures ){
                         if(feature.name === q.feature) {
                             // Compare to values stored in Features object
@@ -412,39 +424,39 @@ export default class ContextQuery {
                                     }
                                 }
                             //} else {
-                            //    b2 = false;
+                            //    b1 = false;
                             //}
                         }  
                     }
-                    if(obj.operator === 'and') {
-                        connct = '&&';
-                    }
-                    if(obj.operator === 'or') {
-                        connct = '||';
-                    }
-                    if(obj.queries.indexOf(q) === 0 ) {
-                        expr += b1;
+                    if (obj.queries.indexOf(q) === 0) {
+                        tmp = b1;
                     } else {
-                        expr += ' ' + connct + ' ' + b1;
+                        if(operator === 'and') {
+                            tmp = tmp && b1;
+                        }
+                        if(operator === 'or') {
+                            tmp = tmp || b1;
+                        }
                     }
                     
                 } else {
-                    if(obj.queries.indexOf(q) !== 0 ) {
-                        if(obj.operator === 'and') {
-                            expr += ' && ';
+                    if (obj.queries.indexOf(q) !== 0){
+                        if(operator === 'and') {
+                            tmp = tmp && evaluateQueriesRecursively(q);
                         }
-                        if(obj.operator === 'or') {
-                            expr += ' || ';
+                        if(operator === 'or') {
+                            tmp = tmp || evaluateQueriesRecursively(q);
                         }
-                    }
-                    evaluateQueriesRecursively(q);
+                    } else {
+                        tmp = evaluateQueriesRecursively(q);
+                    }   
                 }
             }
-            expr += ')';
+            return tmp;
         }
 
-        evaluateQueriesRecursively(this._queries);
-        let b = eval(expr);
+        let b = evaluateQueriesRecursively(this._queries);
+
         if( b != this.matches ) {            
             if(this.matches == undefined) {
                 return b;

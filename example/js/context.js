@@ -243,12 +243,14 @@ $__System.register('2', [], function (_export, _context) {
                      */
 
                     function findQueriesRecursively(obj, context) {
-                        let q = '';
-                        if (context.indexOf('(') != 0) {
-                            q = context.substring(0, context.indexOf('('));
+                        let q = '',
+                            idx = context.indexOf('(');
+                        //context.substring(idx - 3,idx) === 'not' && idx == 3 ) 
+                        if (idx != 0) {
+                            q = context.substring(0, idx);
                             context = context.replace(q, '');
                         } else {
-                            q = context.substring(context.indexOf('(') + 1, findClosingBracket(context.indexOf('('), context));
+                            q = context.substring(idx + 1, findClosingBracket(idx, context));
                             context = context.replace('(' + q + ')', '');
                         }
 
@@ -381,13 +383,23 @@ $__System.register('2', [], function (_export, _context) {
                 }
 
                 _determineMatch() {
-                    let expr = '';
+
                     function evaluateQueriesRecursively(obj) {
-                        expr += '(';
+                        let tmp, operator;
+
+                        if (obj.hasOwnProperty('negate')) {
+                            if (obj.operator === 'and') {
+                                operator = 'or';
+                            } else if (obj.operator === 'and') {
+                                operator = 'and';
+                            }
+                        } else {
+                            operator = obj.operator;
+                        }
+
                         for (let q of obj.queries) {
                             if (!q.hasOwnProperty('queries')) {
-                                let connct = '',
-                                    b1 = true,
+                                let b1 = true,
                                     min = Number.NEGATIVE_INFINITY,
                                     max = Number.POSITIVE_INFINITY;
                                 for (let feature of window.contextFeatures) {
@@ -428,38 +440,38 @@ $__System.register('2', [], function (_export, _context) {
                                             }
                                         }
                                         //} else {
-                                        //    b2 = false;
+                                        //    b1 = false;
                                         //}
                                     }
                                 }
-                                if (obj.operator === 'and') {
-                                    connct = '&&';
-                                }
-                                if (obj.operator === 'or') {
-                                    connct = '||';
-                                }
                                 if (obj.queries.indexOf(q) === 0) {
-                                    expr += b1;
+                                    tmp = b1;
                                 } else {
-                                    expr += ' ' + connct + ' ' + b1;
+                                    if (operator === 'and') {
+                                        tmp = tmp && b1;
+                                    }
+                                    if (operator === 'or') {
+                                        tmp = tmp || b1;
+                                    }
                                 }
                             } else {
                                 if (obj.queries.indexOf(q) !== 0) {
-                                    if (obj.operator === 'and') {
-                                        expr += ' && ';
+                                    if (operator === 'and') {
+                                        tmp = tmp && evaluateQueriesRecursively(q);
                                     }
-                                    if (obj.operator === 'or') {
-                                        expr += ' || ';
+                                    if (operator === 'or') {
+                                        tmp = tmp || evaluateQueriesRecursively(q);
                                     }
+                                } else {
+                                    tmp = evaluateQueriesRecursively(q);
                                 }
-                                evaluateQueriesRecursively(q);
                             }
                         }
-                        expr += ')';
+                        return tmp;
                     }
 
-                    evaluateQueriesRecursively(this._queries);
-                    let b = eval(expr);
+                    let b = evaluateQueriesRecursively(this._queries);
+
                     if (b != this.matches) {
                         if (this.matches == undefined) {
                             return b;
