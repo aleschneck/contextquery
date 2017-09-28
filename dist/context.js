@@ -239,23 +239,52 @@ $__System.register('2', [], function (_export, _context) {
 
                     /**
                      * @param {string} obj an object representing all relations between the queries of which the context is composed 
+                     * such an object has the following structure:
+                     * {
+                     *  operator: 'and' | 'or' // optional: the operator combining two or more queries
+                     *  negate: true // optional: whether the expression has been prefixed with 'not'
+                     *  queries: [ // array of objects
+                     *      { // an object representing a query
+                     *          context: '120 < time < 600', // the query
+                     *          feature: 'time', // the name of the feature
+                     *          lt_gt: { // optional when using < or >
+                     *              left: true | false,
+                     *              right: true | false
+                     *          },
+                     *          max: 600, // optional: the max value specified in the query
+                     *          min: 120, // optional: the min value specified in the query
+                     *          abs: true | 'string' // optional: whether the query has an absolute value 
+                     *      },
+                     *      { an object with the same structure as its parent
+                     *          operator: 'and',
+                     *          queries: [
+                     *              ...
+                     *          ]
+                     *      }
+                     *  ]
+                     * }
                      * @param {string} context the composed context 
                      */
 
                     function findQueriesRecursively(obj, context) {
                         let q = '',
                             idx = context.indexOf('(');
-                        //context.substring(idx - 3,idx) === 'not' && idx == 3 ) 
+
+                        // check if the expression has prefix 'not', if so set idx to 0 
+                        if (context.substring(idx - 3, idx) === 'not') {
+                            idx = idx - 3;
+                        }
+                        // if idx != 0 we're dealing with an operator
                         if (idx != 0) {
                             q = context.substring(0, idx);
-                            context = context.replace(q, '');
                         } else {
-                            q = context.substring(idx + 1, findClosingBracket(idx, context));
-                            context = context.replace('(' + q + ')', '');
+                            q = context.substring(idx, findClosingBracket(idx, context) + 1);
                         }
-
+                        // replace the substring 
+                        context = context.replace(q, '');
                         q = q.trim();
 
+                        // if substring is empty iterate through the queries array recursively
                         if (q !== '') {
                             if (q == 'or' || q == 'and') {
                                 obj.operator = q;
@@ -263,13 +292,17 @@ $__System.register('2', [], function (_export, _context) {
                                 if (!q.includes('and') && !q.includes('or')) {
                                     let ra,
                                         prcnt = '%',
-                                        objct = { context: q },
+                                        objct = {},
                                         objName,
                                         incdec,
                                         lt = '<',
                                         gt = '>',
                                         lteq = '<=',
                                         gteq = '>=';
+                                    if (q.substring(q.indexOf('(') - 3, q.indexOf('(')) === 'not') {
+                                        objct.negate = true;
+                                    }
+                                    objct.context = q.substring(q.indexOf('(') + 1, q.indexOf(')'));
                                     if (objct.context.includes(lt) || objct.context.includes(gt)) {
                                         if (objct.context.includes(lt) && objct.context.includes(gt)) {
                                             console.error('you have mixed the greater than and less than symbol in an expression!');
@@ -365,12 +398,19 @@ $__System.register('2', [], function (_export, _context) {
                                 }
                                 obj.queries.push(q);
                             }
+                            // carry on recursively with the rest of the string
                             findQueriesRecursively(obj, context);
                         } else {
                             for (let i in obj.queries) {
                                 if (typeof obj.queries[i] === 'string') {
                                     context = obj.queries[i];
                                     obj.queries[i] = { queries: [] };
+                                    if (context.substring(context.indexOf('(') - 3, context.indexOf('(')) === 'not') {
+                                        context = context.replace('not', '');
+                                        obj.queries[i].negate = true;
+                                    }
+                                    context = context.substring(context.indexOf('(') + 1, findClosingBracket(context.indexOf('('), context));
+
                                     findQueriesRecursively(obj.queries[i], context);
                                 }
                             }
@@ -387,6 +427,7 @@ $__System.register('2', [], function (_export, _context) {
                     function evaluateQueriesRecursively(obj) {
                         let tmp, operator;
 
+                        // check if the combined query has been prefixed with 'not', if so invert the operators
                         if (obj.hasOwnProperty('negate')) {
                             if (obj.operator === 'and') {
                                 operator = 'or';
@@ -439,10 +480,16 @@ $__System.register('2', [], function (_export, _context) {
                                                 }
                                             }
                                         }
+                                        if (q.hasOwnProperty('negate')) {
+                                            b1 = !b1;
+                                        }
                                         //} else {
                                         //    b1 = false;
                                         //}
                                     }
+                                }
+                                if (obj.hasOwnProperty('negate')) {
+                                    b1 = !b1;
                                 }
                                 if (obj.queries.indexOf(q) === 0) {
                                     tmp = b1;
