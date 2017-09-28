@@ -171,7 +171,7 @@ export default class ContextQuery {
             if (arr.length == 2) {
                 let left = false, tmpArr, tmpStr;
                 for (let idx in arr) {            
-                    // check if symbol is present, &lt; or &gt;
+                    // check if symbol is present
                     if(arr[idx].includes(symbol)) {
                         tmpStr = arr[idx];
                         arr.splice(idx,1);
@@ -246,7 +246,7 @@ export default class ContextQuery {
          *          min: 120, // optional: the min value specified in the query
          *          abs: true | 'string' // optional: whether the query has an absolute value 
          *      },
-         *      { an object with the same structure as its parent
+         *      { // an object with the same structure as its parent
          *          operator: 'and',
          *          queries: [
          *              ...
@@ -409,7 +409,9 @@ export default class ContextQuery {
     }
 
     _determineMatch() {
-        
+        /** 
+        * @param {object} obj the object representing the combined queries in a tree-like structure  
+        */
         function evaluateQueriesRecursively(obj) {
             let tmp, operator;
 

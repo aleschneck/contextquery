@@ -106,6 +106,7 @@ export default class ContextStyle extends HTMLElement {
             contextQuery.class = cssClass;
             // Instantiate Object with new constructor
             let cqo = window.matchContext(contextQuery.expression), css = "";
+            // Define a callback on change
             cqo.onchange = (e) => {
                 if(e != undefined) {
                     console.log(e);
@@ -120,6 +121,7 @@ export default class ContextStyle extends HTMLElement {
                     }             
                 }
             }
+            // trigger the callback for the first time
             cqo.onchange();
 
             this._contextQueryObjectList.push(cqo);

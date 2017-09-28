@@ -182,7 +182,7 @@ $__System.register('2', [], function (_export, _context) {
                                 tmpArr,
                                 tmpStr;
                             for (let idx in arr) {
-                                // check if symbol is present, &lt; or &gt;
+                                // check if symbol is present
                                 if (arr[idx].includes(symbol)) {
                                     tmpStr = arr[idx];
                                     arr.splice(idx, 1);
@@ -255,7 +255,7 @@ $__System.register('2', [], function (_export, _context) {
                      *          min: 120, // optional: the min value specified in the query
                      *          abs: true | 'string' // optional: whether the query has an absolute value 
                      *      },
-                     *      { an object with the same structure as its parent
+                     *      { // an object with the same structure as its parent
                      *          operator: 'and',
                      *          queries: [
                      *              ...
@@ -423,7 +423,9 @@ $__System.register('2', [], function (_export, _context) {
                 }
 
                 _determineMatch() {
-
+                    /** 
+                    * @param {object} obj the object representing the combined queries in a tree-like structure  
+                    */
                     function evaluateQueriesRecursively(obj) {
                         let tmp, operator;
 
@@ -667,6 +669,7 @@ $__System.register('3', [], function (_export, _context) {
                         // Instantiate Object with new constructor
                         let cqo = window.matchContext(contextQuery.expression),
                             css = "";
+                        // Define a callback on change
                         cqo.onchange = e => {
                             if (e != undefined) {
                                 console.log(e);
@@ -681,6 +684,7 @@ $__System.register('3', [], function (_export, _context) {
                                 }
                             }
                         };
+                        // trigger the callback for the first time
                         cqo.onchange();
 
                         this._contextQueryObjectList.push(cqo);
