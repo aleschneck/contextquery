@@ -235,10 +235,10 @@ $__System.register('2', [], function (_export, _context) {
                         return c;
                     }
 
-                    let newCtxArr = { queries: [] };
+                    let tree = { queries: [] };
 
                     /**
-                     * @param {string} obj an object representing all relations between the queries of which the context is composed 
+                     * @param {object} obj an object representing all relations between the queries of which the context is composed 
                      * such an object has the following structure:
                      * {
                      *  operator: 'and' | 'or' // optional: the operator combining two or more queries
@@ -266,7 +266,7 @@ $__System.register('2', [], function (_export, _context) {
                      * @param {string} context the composed context 
                      */
 
-                    function findQueriesRecursively(obj, context) {
+                    function createQueryTreeRecursively(obj, context) {
                         let q = '',
                             idx = context.indexOf('(');
 
@@ -284,7 +284,6 @@ $__System.register('2', [], function (_export, _context) {
                         context = context.replace(q, '');
                         q = q.trim();
 
-                        // if substring is empty iterate through the queries array recursively
                         if (q !== '') {
                             if (q == 'or' || q == 'and') {
                                 obj.operator = q;
@@ -399,7 +398,7 @@ $__System.register('2', [], function (_export, _context) {
                                 obj.queries.push(q);
                             }
                             // carry on recursively with the rest of the string
-                            findQueriesRecursively(obj, context);
+                            createQueryTreeRecursively(obj, context);
                         } else {
                             for (let i in obj.queries) {
                                 if (typeof obj.queries[i] === 'string') {
@@ -411,15 +410,15 @@ $__System.register('2', [], function (_export, _context) {
                                     }
                                     context = context.substring(context.indexOf('(') + 1, findClosingBracket(context.indexOf('('), context));
 
-                                    findQueriesRecursively(obj.queries[i], context);
+                                    createQueryTreeRecursively(obj.queries[i], context);
                                 }
                             }
                         }
                     }
 
-                    findQueriesRecursively(newCtxArr, context.trim());
+                    createQueryTreeRecursively(tree, context.trim());
 
-                    return newCtxArr;
+                    return tree;
                 }
 
                 _determineMatch() {

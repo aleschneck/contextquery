@@ -226,10 +226,10 @@ export default class ContextQuery {
             return c;
         }
 
-        let newCtxArr = {queries: []};
+        let tree = { queries: [] };
 
         /**
-         * @param {string} obj an object representing all relations between the queries of which the context is composed 
+         * @param {object} obj an object representing all relations between the queries of which the context is composed 
          * such an object has the following structure:
          * {
          *  operator: 'and' | 'or' // optional: the operator combining two or more queries
@@ -257,7 +257,7 @@ export default class ContextQuery {
          * @param {string} context the composed context 
          */
 
-        function findQueriesRecursively(obj,context) {
+        function createQueryTreeRecursively(obj,context) {
             let q = '', idx = context.indexOf('(');
 
             // check if the expression has prefix 'not', if so set idx to 0 
@@ -274,9 +274,8 @@ export default class ContextQuery {
             context = context.replace(q,'');
             q = q.trim();
             
-            // if substring is empty iterate through the queries array recursively
-            if(q !== ''){
-                if( q == 'or' || q == 'and') {
+            if(q !== ''){ 
+                if( q == 'or' || q == 'and') { 
                     obj.operator = q;
                 } else {
                     if(!q.includes('and') && !q.includes('or') ) {
@@ -384,7 +383,7 @@ export default class ContextQuery {
                     obj.queries.push(q);
                 }
                 // carry on recursively with the rest of the string
-                findQueriesRecursively(obj,context);
+                createQueryTreeRecursively(obj,context);
             } else {
                 for(let i in obj.queries){
                     if(typeof obj.queries[i] === 'string') {
@@ -396,15 +395,15 @@ export default class ContextQuery {
                         }
                         context = context.substring(context.indexOf('(') + 1, findClosingBracket(context.indexOf('('),context));
                         
-                        findQueriesRecursively(obj.queries[i],context);
+                        createQueryTreeRecursively(obj.queries[i],context);
                     }       
                 }
             }
         }
 
-        findQueriesRecursively(newCtxArr,context.trim());
+        createQueryTreeRecursively(tree,context.trim());
 
-        return newCtxArr;
+        return tree;
         
     }
 
