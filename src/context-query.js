@@ -418,7 +418,7 @@ export default class ContextQuery {
             if(obj.hasOwnProperty('negate')) {
                 if(obj.operator === 'and') {
                     operator = 'or';
-                } else if(obj.operator === 'and') {
+                } else if(obj.operator === 'or') {
                     operator = 'and';
                 }
             } else {
@@ -476,6 +476,7 @@ export default class ContextQuery {
                     if(obj.hasOwnProperty('negate')) {
                         b1 = !b1;
                     }
+                    
                     if (obj.queries.indexOf(q) === 0) {
                         tmp = b1;
                     } else {
@@ -486,7 +487,7 @@ export default class ContextQuery {
                             tmp = tmp || b1;
                         }
                     }
-                    
+                  
                 } else {
                     if (obj.queries.indexOf(q) !== 0){
                         if(operator === 'and') {

@@ -432,7 +432,7 @@ $__System.register('2', [], function (_export, _context) {
                         if (obj.hasOwnProperty('negate')) {
                             if (obj.operator === 'and') {
                                 operator = 'or';
-                            } else if (obj.operator === 'and') {
+                            } else if (obj.operator === 'or') {
                                 operator = 'and';
                             }
                         } else {
@@ -492,6 +492,7 @@ $__System.register('2', [], function (_export, _context) {
                                 if (obj.hasOwnProperty('negate')) {
                                     b1 = !b1;
                                 }
+
                                 if (obj.queries.indexOf(q) === 0) {
                                     tmp = b1;
                                 } else {
