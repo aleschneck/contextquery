@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>@Context -Battery-</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/@webcomponents/webcomponentsjs@^2/webcomponents-bundle.js"></script>
+    <script src="js/context.js"></script>
+    <style>
+      html, body, main {
+        height: 100%;
+      }
+      body {
+        background-color: black;
+      }
+      main {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .battery-wrap {
+        border: 4px solid red;
+        padding: 4px;
+        width: 140px;
+        height: 60px;
+        position: relative;
+      }
+      .battery-wrap::after {
+        content: "";
+        height: 20px;
+        width: 4px;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: -8px;
+        background-color: red;
+      }
+      .battery-bars {
+        width: 5%;
+        height: 100%;
+        background-color: red;
+      }
+      @keyframes animbar {
+        from { width: 1% }
+        to { width: 99% }
+      }
+    </style>
+    <context-style>
+      @context(battery >= 10%) {
+        .battery-wrap {
+          border-color: white;
+        }
+        .battery-bars, .battery-wrap::after {
+          background-color: white;
+        }
+      }
+      @context(10% < battery <= 33%) {
+        .battery-bars {
+          width: 25%;
+        }
+      }
+      @context(33% < battery <= 66%) {
+        .battery-bars {
+          width: 50%;
+        }
+      }
+      @context(66% < battery <= 95%) {
+        .battery-bars {
+          width: 75%;
+        }
+      }
+      @context(battery > 95%) {
+        .battery-bars {
+          width: 100%;
+        }
+      }
+      @context(charging-battery) {
+        .battery-wrap {
+          border-color: green;
+        }
+        .battery-bars, .battery-wrap::after {
+          background-color: green;
+        }
+      }
+      @context(charging-battery) and (battery < 99%) {
+        .battery-bars {
+          animation-name: animbar;
+          animation-duration: 3s;
+          animation-iteration-count: infinite;
+        }
+      }
+    </context-style>
+  </head>
+  <body>
+    <main>
+      <div class="battery-wrap">
+        <div class="battery-bars">
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

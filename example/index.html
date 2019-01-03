@@ -5,9 +5,8 @@
 
     <title>@Context</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="text/javascript" src="js/webcomponents-hi-sd-ce.js"></script>
-    <script src="js/awc-core.js"></script>
-    <script src="js/context.min.js"></script>
+    <script src="https://unpkg.com/@webcomponents/webcomponentsjs@^2/webcomponents-bundle.js"></script>
+    <script src="js/context.js"></script>
     
     <style>
         html, body {
@@ -16,38 +15,22 @@
             padding: 0;
             height: 100%;
         }
-
         body {
             font-family: Verdana, Geneva, Tahoma, sans-serif;
         }
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 0 15px;
-            text-align: center;
-        }
-        label {
-            margin-bottom: 24px;
-            
-        }
-        input[type="range"] {
-            margin: 0;
-        }
-        label, input[type="range"], .adapt {
-            display: inline-block;
-            width: 100%;
-            padding: 6px 0;
-            border: none;
+        .inner {
+            display: flex;
+            justify-content: center;
+            align-content: center;
         }
         .adapt {
-            margin: 10% 0;
+            margin: 5% 0;
             font-size: 200px;
             font-weight: 600;
-            display: inline-block;
         }
         .code {
            text-align: left;
-           padding: 36px 12px;
+           padding: 36px 0;
         }
         .code .rule {
             color: blue;
@@ -69,7 +52,7 @@
             display: block;
         }
     </style>
-    <context-style context="(5 < light-intensity <= 15)">          
+    <context-style context="(light-intensity > 40)">          
         body { background-color: black; color: white; }  
         .code .rule {
             color: mediumpurple;
@@ -88,250 +71,33 @@
         }         
     </context-style>
     <script>
-
-        let inputElm, outputElm;
-        document.addEventListener('DOMContentLoaded',function(){
-            inputElm = document.querySelector("#in");
-            motion = document.querySelector("#motion");
-            outputElm = document.querySelector('.adapt');
-            inputElm.addEventListener('change',function(e){
-                e.stopPropagation();
-                window.contextFeatures[0].value = inputElm.value;
-                //performContextCheck( 'devicelight', parseInt(inputElm.value) ); // this not supported in Firefox
-                outputElm.innerHTML = inputElm.value;
-            });
-            motion.addEventListener('change',function(){
-                //performContextCheck( 'devicemotion', parseInt(motion.value) );
-            });
-
+        document.addEventListener( 'DOMContentLoaded', () => {      
+            let outputElm = document.querySelector('.adapt');
+            setInterval( () => {
+                for( let feature of window.contextFeatures ) {
+                    if( feature.name === 'light-intensity' && feature.value != null ) {
+                        outputElm.innerHTML = feature.value;
+                    }
+                }
+            }, 100);
         });
-
-        document.profilestore = new awc.LocalProfileStore();
-    
-    class AdaptiveClock extends awc.AdaptiveComponent(HTMLElement) {
-      constructor() {
-        super();
-
-        this._time = null;
-
-        this._autoupdater = this._update.bind(this);
-      }
-
-      static get observedAttributes() { 
-        return ['time'];
-      }
-
-      get time() {
-        return this.getAttribute('time');
-      }
-
-      set time(val) {
-        this.setAttribute('time', val);
-      }
-
-      connectedCallback() {
-        super.connectedCallback();
-
-        console.log(`ParentElement: ${this.parentElement}, ParentHode: ${this.parentNode}`);
-
-        if (this._time == null) {
-          setInterval(this._autoupdater, 1000);
-        }
-        this._update();
-      }
-
-      attributeChangedCallback(name, oldValue, newValue) {
-        super.attributeChangedCallback(name, oldValue, newValue);
-
-        if ('time' == name && newValue != null) {
-          this._time = new Date('1970-01-01T' + newValue);
-          this._update();
-
-        } else if ('time' == name) {
-          // Show auto updated current time
-          this._time = null;
-          setInterval(this._autoupdater, 1000);
-          this._update();
-        }
-      }
-
-      performAdaptation(profile) {
-        super.performAdaptation(profile);
-        this._update();
-      }
-
-      _update() {
-        if (this._currentVariant != null) {
-          this._currentVariant.show(this._time != null ? this._time : new Date());
-        }
-      }
-    }
-
-    class TextClock extends awc.AdaptiveVariant {
-      constructor() {
-        super();
-      }
-
-      get template() {
-        return document.querySelector('template#text').content;
-      }
-
-      connectedCallback() {
-        super.connectedCallback();
-
-        this._hour = this.contentRoot.querySelector("#h");
-        this._minute = this.contentRoot.querySelector("#m");
-        this._second = this.contentRoot.querySelector("#s");
-      }
-
-      show(time) {
-        let h = time.getHours();
-        let m = time.getMinutes();
-        let s = time.getSeconds();
-            
-        if (h < 10) { h = '0'+h }
-        if (m < 10) { m = '0'+m }
-        if (s < 10) { s = '0'+s }
-            
-        this._hour.innerText = h;
-        this._minute.innerText = m;
-        this._second.innerText = s;
-      }
-
-      static matches(context) {
-        return context['display-mode'] == 'text';
-      }
-    }
-
-    class GraphicClock extends awc.AdaptiveVariant {
-      constructor() {
-        super();
-      }
-
-      get template() {
-        return document.querySelector('template#graphic').content;
-      }
-
-      connectedCallback() {
-        super.connectedCallback();
-
-        this._canvas = this.contentRoot.querySelector('canvas');
-        this._ctx = this._canvas.getContext('2d');
-      }
-
-      show(time) {
-        let center = {x: this._canvas.clientWidth/2, y: this._canvas.clientHeight/2 };
-        let h = time.getHours();
-        let m = time.getMinutes();
-        let s = time.getSeconds();
-
-        this._ctx.clearRect(0, 0, this._canvas.clientWidth, this._canvas.clientHeight);
-        this._ctx.beginPath();
-        this._ctx.arc(center.x, center.y, Math.min(center.x, center.y)-2, Math.PI/-2, (h%12)*Math.PI/6-Math.PI/2);
-        this._ctx.stroke();
-        this._ctx.beginPath();
-        this._ctx.arc(center.x, center.y, Math.min(center.x, center.y)-10, Math.PI/-2, m*Math.PI/30-Math.PI/2);
-        this._ctx.stroke();
-        this._ctx.beginPath();
-        this._ctx.arc(center.x, center.y, Math.min(center.x, center.y)-18, Math.PI/-2, s*Math.PI/30-Math.PI/2);
-        this._ctx.stroke();
-      }
-
-      static matches(context) {
-        return context['display-mode'] == 'graphic';
-      }
-    }
-
-    AdaptiveClock.registerVariant(GraphicClock);
-    AdaptiveClock.registerVariant(TextClock);
-
-    AdaptiveClock.defaultVariant = TextClock;
-    
-    customElements.define('adaptive-clock', AdaptiveClock);
-
     </script>
 
 </head>
 <body class="body">
-        <template id="graphic">
-            <context-style context="(light-intensity < 10)">                         
-                :host {
-                    border: 2px solid purple;
-                    background-color: white;
-                }
-            </context-style>
-            <style>
-                :host {
-                    display: block;
-                    border: 1px solid blue;
-                    background-color: lightgrey;
-                }
-            </style>
-            <canvas></canvas>
-        </template>
-        <template id="text">
-                <context-style context="(light-intensity < 10)">                         
-                    :host {
-                        border: 1px solid red;
-                        background-color: white;
-                    }
-                </context-style>
-            <style>
-                :host {
-                    display: block;
-                    border: 3px dotted green;
-                    background-color: white;
-                    color: black;
-                }
-            </style>
-            
-            <p>
-                <span id="h">hh</span>:<span id="m">mm</span>:<span id="s">ss</span>
-            </p>
-        </template>
-
-<header class="navbar">
-</header>
-<main>
-        <div id="wrap">
-                <script>
-                    let wrap = document.querySelector('#wrap');
-                    document.volatileprofile = new awc.ProfileStore(true, wrap);
-                    let dms = [{'display-mode': 'text'},  {'display-mode': 'graphic'}];
-                    
-                    let dllt10 = window.matchContext('(light-intensity < 15)');
-             
-                    dllt10.onchange = function(e) {
-                        console.log(e);
-                        if (e.detail.matches) {
-                            document.volatileprofile.changeProfile(dms[0]);
-                        } else {
-                            document.volatileprofile.changeProfile(dms[1]);
-                        }
-                    }
-
-                </script>
-            
-                <adaptive-clock></adaptive-clock>
-            
-                <button onclick="document.volatileprofile.changeProfile(dms[0]);">Text</button>
-                <button onclick="document.volatileprofile.changeProfile(dms[1]);">Graphic</button>
-              </div>
-    <div class="container">
+    <header class="navbar">
+    </header>
+    <main>
         <div class="inner">
             <div class="adapt">0</div>
         </div>
-    </div>
-</main>
-<footer class="fix-bottom">
-    <div class="container">
+        
+    </main>
+    <footer class="fix-bottom">
         <div class="inner">
-            <label for="in">light-intensity</label>
-            <input type="range" id="in" name="in" value="0">
-            <input type="range" id="motion" name="motion" value="0" style="display: none;">
             <div class="code">
                 <code>
-                    <span class="rule">@context</span> (<span class="value">5</span> &lt; <span class="feat">light-intensity</span> &lt;= <span class="value">15</span>) { <br>
+                    <span class="rule">@context</span> (<span class="feat">light-intensity</span> &gt; <span class="value">40</span>) { <br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="selector">body</span> { <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">background-color</span>:<span class="stringval"> black</span>;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">color</span>:<span class="stringval"> white</span>; <br>
@@ -341,8 +107,8 @@
             </div>
 
         </div>
-    </div>
-</footer>
+        
+    </footer>
 
 </body>
 </html>

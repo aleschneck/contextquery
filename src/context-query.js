@@ -1,6 +1,16 @@
 /**
  * 
  */
+ // new features structure
+window.contextFeatures = [
+    { name: 'light-intensity', value: null, supported: 'ondevicelight' in window ? true : false },
+    { name: 'motion-speed', value: null, supported: 'ondevicemotion' in window ? true : false },
+    { name: 'touch', value: null, supported: 'ontouchstart' in window || navigator.maxTouchPoints ? true : false  },
+    { name: 'time', value: null, supported: true },
+    { name: 'battery', value: null, supported: 'getBattery' in navigator ? true : false },
+    { name: 'charging-battery', value: null, supported: 'getBattery' in navigator ? true : false }
+];
+
 export default class ContextQuery {
     constructor(query) {
         // 'Private'
@@ -16,50 +26,56 @@ export default class ContextQuery {
     }
 
     _registerListeners() {
-        if(this.context.includes('light-intensity')) {
-            window.addEventListener('devicelight', (e) => {      
-                let normalised = e.value / 10; // normalise range from 0 to 100, max value on nexus 4 is 1000
-                this._performContextCheck('light-intensity',Math.round(normalised));
-            });
-        } 
-        if(this.context.includes('touch')) { 
-            this._performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);
-        }
-        if(this.context.includes('time')) {
-            this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
-            this._intervalID = setInterval(() => {
-                this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
-            },1000);
-        }
+        for( let feature of window.contextFeatures ) {
+            if ( feature.supported && this.context.includes(feature.name)) {
+                switch( feature.name ) {
+                    case 'light-intensity':
+                        window.addEventListener('devicelight', (e) => {      
+                            let normalised = e.value / 10; // normalise range from 0 to 100, max value on nexus 4 is 1000
+                            this._performContextCheck('light-intensity',Math.round(normalised));
+                        });
+                        break;
+                    case 'touch':
+                        this._performContextCheck('touch', ('ontouchstart' in window || navigator.maxTouchPoints)?true:false);
+                        break;
+                    case 'time':
+                        this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
+                        this._intervalID = setInterval(() => {
+                            this._performContextCheck('time',(new Date().getHours() * 60) +  new Date().getMinutes());
+                        },1000);
+                        break;
+                    case 'motion-speed':
+                        let acceleration = 0;
+                        window.addEventListener('devicemotion', function(e) {
+                            let accel = Math.round(Math.sqrt(e.acceleration.y*e.acceleration.y + e.acceleration.x*e.acceleration.x));   
+                            if (accel > acceleration || accel == 0) {
+                                acceleration = accel;
+                                this._performContextCheck('motion-speed', accel);
+                            }
+                        });
+                        break;
+                    case 'battery':
+                        navigator.getBattery().then((battery) => {
+                            this._performContextCheck('battery', battery.level * 100 );     
+                            battery.addEventListener('levelchange', () => {
+                                this._performContextCheck('battery', battery.level * 100 );
+                            });
 
-        let acceleration = 0;
-        if(this.context.includes('motion-speed')){           
-            window.addEventListener('devicemotion', function(e) {
-                let accel = Math.round(Math.sqrt(e.acceleration.y*e.acceleration.y + e.acceleration.x*e.acceleration.x));   
-                if (accel > acceleration || accel == 0) {
-                    acceleration = accel;
-                    this._performContextCheck('motion-speed', accel);
+                        });
+                        break;
+                    case 'charging-battery':
+                        navigator.getBattery().then((battery) => {
+                            // Perform check on resolved promise then add change listener
+                            this._performContextCheck('charging-battery',battery.charging);
+                            battery.addEventListener('chargingchange',() => {         
+                                this._performContextCheck('charging-battery',battery.charging);
+                            });   
+                        });
+                        break;
                 }
-            });            
+            }   
         }
         
-        if(this.context.includes('charging-battery') || this.context.includes('battery') ) {
-            navigator.getBattery().then((battery) => {
-                if(this.context.includes('charging-battery')) { 
-                    // Perform check on resolved promise then add change listener
-                    this._performContextCheck('charging-battery',battery.charging);
-                    battery.addEventListener('chargingchange',() => {         
-                        this._performContextCheck('charging-battery',battery.charging);
-                    });
-                }
-                if(this.context.includes('battery')) { 
-                    this._performContextCheck('battery', battery.level * 100 );     
-                    battery.addEventListener('levelchange', () => {
-                        this._performContextCheck('battery', battery.level * 100 );
-                    });
-                }
-            });
-        }
     }
 
     /**   
@@ -431,7 +447,7 @@ export default class ContextQuery {
                     for(let feature of window.contextFeatures ){
                         if(feature.name === q.feature) {
                             // Compare to values stored in Features object
-                            //if(feature.supported) {
+                            if(feature.supported) {
                                 // has an unique value either numeric or boolean
                                 if(q.hasOwnProperty('abs')) {
                                     if(Number.isInteger(q.abs)) {
@@ -468,9 +484,9 @@ export default class ContextQuery {
                                 if(q.hasOwnProperty('negate')) {
                                     b1 = !b1;
                                 }
-                            //} else {
-                            //    b1 = false;
-                            //}
+                            } else {
+                                b1 = false;
+                            }
                         }  
                     }
                     if(obj.hasOwnProperty('negate')) {
@@ -521,16 +537,6 @@ export default class ContextQuery {
 // matchContext function to instantiate ContextQueryList Object with -- let varname = window.matchContext("(touch)") -- 
 window.matchContext = function(expression) {
     let o = new ContextQuery(expression);
-    console.log(o);            
+    //console.log(o);            
     return o;
 }
-
-// new features structure
-window.contextFeatures = [
-    { name: 'light-intensity', value: null, supported: (function() { return ('ondevicelight' in window)?true:false }()) },
-    { name: 'motion-speed', value: null, supported: (function() { return ('ondevicemotion' in window)?true:false }()) },
-    { name: 'touch', value: null, supported: (function() { return ('ontouchstart' in window || navigator.maxTouchPoints)?true:false }()) },
-    { name: 'time', value: null, supported: true },
-    { name: 'battery', value: null, supported: (function() { return (navigator.getBattery)?true:false }()) },
-    { name: 'charging-battery', value: null, callback: (function() { return (navigator.getBattery)?true:false }()) }
-];
