@@ -1,22 +1,26 @@
-# Context-Style
+# Context queries
 
-Context-Style is a HTML custom element that allows developers to write context dependent style sheets with the utterly known CSS syntax. It builds upon the idea of media queries, where breakpoints are set to define different style rules. Media queries are mainly based on the viewport whereas Context-Style integrates some of the still in development Web APIs like DeviceLightEvent and DeviceMotionEvent to determine the context in which the users are.
+`<context-style>` is a HTML custom element that allows developers to write context dependent style sheets with the utterly known CSS syntax. It builds upon the idea of media queries, where breakpoints are set to define different style rules. Media queries are mainly based on the viewport whereas Context-Style integrates some of the still in development Web APIs like DeviceLightEvent and DeviceMotionEvent to determine the context in which the users are.
 
 
 #### Supported features:
 
-`light-intensity`, `time`, `battery`, `charging-battery`
+`light-intensity`, `touch`, `time`, `battery`, `charging-battery`
 
 
 #### Usage
 
-place the minified javascript file in the Head Tag
+Copy the minified javascript file in /dist then and it in the Head Tag like this:
 
-`<script src="js/context.min.js"></script>`
+    <head>
+        ...
+        <script src="path-to-your-js-files/context.min.js"></script>
+        ...
+    </head>
 
-Web Components need a Polyfill depending on the browser, include the polyfill before ypu import the custom context element, see more on [https://github.com/webcomponents](https://github.com/webcomponents "Webcomponents")
+Web Components need a Polyfill depending on the browser, include the polyfill before you import the custom context element, see more on [https://github.com/webcomponents](https://github.com/webcomponents "Webcomponents")
 
-`<script type="text/javascript" src="webcomponents-hi-sd-ce.js"></script>`
+`<script src="https://unpkg.com/@webcomponents/webcomponentsjs@^2/webcomponents-bundle.js"></script>`
 
 Write your styles using the @context rule on a separate css file and link them with the "href" attribute 
 
@@ -31,3 +35,15 @@ or directly in the custom element, you can use "min-" and "max-" prefixes or ran
         }
     </context-style>
 
+
+#### Run the examples locally:
+
+To view the examples clone the repository first. To install the dependencies open your favourite shell and run:
+
+`npm install`
+
+to start the server run:
+
+`npm run serve`
+
+open your browser and go to one of the listed addresses, usually [http://127.0.0.1:8080](http://127.0.0.1:8080) does the trick.

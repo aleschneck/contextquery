@@ -2,18 +2,32 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>@Context -Battery-</title>
+    <title>@Context/Battery</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://unpkg.com/@webcomponents/webcomponentsjs@^2/webcomponents-bundle.js"></script>
     <script src="js/context.js"></script>
     <style>
-      html, body, main {
+      html, body {
         height: 100%;
+        margin: 0;
+				padding: 0;
       }
       body {
         background-color: black;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
       }
+      header {
+				padding: 12px;
+        font-size: 14px;
+        line-height: 18px;
+    		border-bottom: 0.5px solid white;
+			}
+			header a {
+				text-decoration: none;
+				color: white;
+			}
       main {
+        height: calc(100% - 42.5px);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -92,6 +106,9 @@
     </context-style>
   </head>
   <body>
+    <header>
+      <a href="/">back to overview</a>
+    </header>
     <main>
       <div class="battery-wrap">
         <div class="battery-bars">

@@ -1,114 +1,70 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-
-    <title>@Context</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://unpkg.com/@webcomponents/webcomponentsjs@^2/webcomponents-bundle.js"></script>
-    <script src="js/context.js"></script>
-    
-    <style>
-        html, body {
-            position: relative;
-            margin: 0;
-            padding: 0;
-            height: 100%;
-        }
-        body {
-            font-family: Verdana, Geneva, Tahoma, sans-serif;
-        }
-        .inner {
-            display: flex;
-            justify-content: center;
-            align-content: center;
-        }
-        .adapt {
-            margin: 5% 0;
-            font-size: 200px;
-            font-weight: 600;
-        }
-        .code {
-           text-align: left;
-           padding: 36px 0;
-        }
-        .code .rule {
-            color: blue;
-        }
-        .code .feat {
-            color: red;
-        }
-        .code .value {
-            color: green;
-        }
-        .code .stringval {
-            color: cornflowerblue;
-        }
-        .code .selector {
-            color: darkred;
-        }
-
-        foo-elm {
-            display: block;
-        }
-    </style>
-    <context-style context="(light-intensity > 40)">          
-        body { background-color: black; color: white; }  
-        .code .rule {
-            color: mediumpurple;
-        }
-        .code .feat {
-            color: lightskyblue;
-        }
-        .code .value {
-            color: darkseagreen;
-        }
-        .code .stringval {
-            color: lightgray;
-        }
-        .code .selector {
-            color: #ffd966;
-        }         
-    </context-style>
-    <script>
-        document.addEventListener( 'DOMContentLoaded', () => {      
-            let outputElm = document.querySelector('.adapt');
-            setInterval( () => {
-                for( let feature of window.contextFeatures ) {
-                    if( feature.name === 'light-intensity' && feature.value != null ) {
-                        outputElm.innerHTML = feature.value;
-                    }
-                }
-            }, 100);
-        });
-    </script>
-
-</head>
-<body class="body">
-    <header class="navbar">
-    </header>
+	<head>
+		<meta charset="UTF-8">
+		<title>@Context</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="https://unpkg.com/@webcomponents/webcomponentsjs@^2/webcomponents-bundle.js"></script>
+		<script src="js/context.js"></script>	
+		<style>
+			html, body {
+				position: relative;
+				margin: 0;
+				padding: 0;
+				height: 100%;
+			}
+			body {
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+			}
+			main {
+				padding: 12px;
+			}
+			ol {
+				list-style: decimal-leading-zero;
+				margin: 0;
+				padding: 0 40px;
+				font-size: 14px;
+				line-height: 18px;
+			}
+			li a {
+				text-decoration: none;
+				border-bottom: 0.5px solid black;
+				margin: 12px 0;
+				padding-bottom: 6px;
+				font-size: 16px;
+				font-weight: 700;
+				display: inline-block;
+			}
+			li a:hover {
+				text-decoration: line-through;
+			}
+			p {
+				margin: 0;
+			}
+		</style>
+		<context-style context="(touch)">
+			li a {
+				font-size: 20px;
+				padding: 12px 0;
+				display: block;
+			}
+		</context-style>
+	</head>
+	<body class="body">
     <main>
-        <div class="inner">
-            <div class="adapt">0</div>
-        </div>
-        
+			<ol>
+				<li>
+					<a href="/lightintensity">light intensity</a>
+					<p>Device needs an Ambient light sensor. Works on Edge[1], Firefox for Android[2] and Firefox[2][3]</p>
+					<p>[1] Tested only on Surface Devices.</p>
+					<p>[2] <code>device.sensors.ambientLight.enabled</code> needs to be set to true. Visit about:config to change preferences.</p>
+					<p>[3] except MacBook Pro with Touch Bar.</p>
+				</li>
+				<li>
+					<a href="/battery">battery</a>
+					<p>Works on Chrome, Chrome for Android, Opera, Opera for Android and Samsung Internet</p>
+				</li>
+			</ol>
     </main>
-    <footer class="fix-bottom">
-        <div class="inner">
-            <div class="code">
-                <code>
-                    <span class="rule">@context</span> (<span class="feat">light-intensity</span> &gt; <span class="value">40</span>) { <br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="selector">body</span> { <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">background-color</span>:<span class="stringval"> black</span>;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="feat">color</span>:<span class="stringval"> white</span>; <br>
-&nbsp;&nbsp;&nbsp;&nbsp;} <br>   
-                    }
-                </code>
-            </div>
-
-        </div>
-        
-    </footer>
-
-</body>
+	</body>
 </html>

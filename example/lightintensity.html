@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+	<head>
+    <meta charset="UTF-8">
+    <title>@Context/light-intensity</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/@webcomponents/webcomponentsjs@^2/webcomponents-bundle.js"></script>
+    <script src="js/context.js"></script>
+    
+    <style>
+			html, body {
+				position: relative;
+				margin: 0;
+				padding: 0;
+				height: 100%;
+			}
+			body {
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+			}
+			header {
+				padding: 12px;
+        font-size: 14px;
+        line-height: 18px;
+				background-color: black;
+			}
+			header a {
+				text-decoration: none;
+				color: white;
+			}
+			.inner {
+				display: flex;
+				justify-content: center;
+				align-content: center;
+			}
+			.adapt {
+				margin: 5% 0;
+				font-size: 200px;
+				font-weight: 600;
+			}
+			.code {
+				text-align: left;
+				padding: 36px 0;
+			}
+			.code .rule {
+				color: blue;
+			}
+			.code .feat {
+				color: red;
+			}
+			.code .value {
+				color: green;
+			}
+			.code .stringval {
+				color: cornflowerblue;
+			}
+			.code .selector {
+				color: darkred;
+			}
+    </style>
+    <context-style context="(light-intensity > 40)">          
+			body { background-color: black; color: white; }  
+			.code .rule {
+				color: mediumpurple;
+			}
+			.code .feat {
+				color: lightskyblue;
+			}
+			.code .value {
+				color: darkseagreen;
+			}
+			.code .stringval {
+				color: lightgray;
+			}
+			.code .selector {
+				color: #ffd966;
+			}         
+    </context-style>
+    <script>
+			document.addEventListener( 'DOMContentLoaded', () => {      
+				let outputElm = document.querySelector('.adapt');
+				setInterval( () => {
+					for( let feature of window.contextFeatures ) {
+						if( feature.name === 'light-intensity' && feature.value != null ) {
+							outputElm.innerHTML = feature.value;
+						}
+					}
+				}, 100);
+			});
+    </script>
+	</head>
+	<body class="body">
+		<header>
+			<a href="/">back to overview</a>
+		</header>
+    <main>
+			<div class="inner">
+				<div class="adapt">0</div>
+			</div>
+    </main>
+    <footer class="fix-bottom">
+			<div class="inner">
+				<div class="code">
+					<code>
+						<span class="rule">@context</span> (<span class="feat">light-intensity</span> &gt; <span class="value">40</span>) { <br>
+						&nbsp;&nbsp;&nbsp;&nbsp;
+						<span class="selector">body</span> { <br>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+						<span class="feat">background-color</span>:<span class="stringval"> black</span>;<br>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+						<span class="feat">color</span>:<span class="stringval"> white</span>; <br>
+						&nbsp;&nbsp;&nbsp;&nbsp;} <br> }
+					</code>
+				</div>
+			</div>        
+    </footer>
+	</body>
+</html>
